@@ -13,9 +13,42 @@
     <link rel="stylesheet" href="../styles.css" />
     <link rel="stylesheet" href="../overrides.css?v=local-time-8" />
     <link rel="stylesheet" href="../applications.css?v=party-controls-1" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../cabinet.css?v=cabinet-8" />
   </head>
   <body>
     <div class="noise"></div>
+    <div class="cabinet-shell" id="cabinetShell" hidden>
+      <div class="cabinet-mobile-shade" id="cabinetMobileShade" hidden></div>
+      <aside class="cabinet-sidebar" id="cabinetSidebar" aria-label="Навигация личного кабинета">
+        <a class="cabinet-brand" href="https://profile.elmorelab.com/ru/cabinet" target="_blank" rel="noreferrer">Elmore Lab</a>
+        <div class="cabinet-server-label">ВЫБЕРИ СЕРВЕР</div>
+        <div class="cabinet-server-readout" id="cabinetServerReadout">Сервер выбирается в заявке</div>
+        <nav class="cabinet-nav" aria-label="Разделы">
+          <a href="https://profile.elmorelab.com/ru/cabinet" target="_blank" rel="noreferrer"><span aria-hidden="true">▦</span> Игровые аккаунты</a>
+          <a href="https://profile.elmorelab.com/ru/cabinet/characters" target="_blank" rel="noreferrer"><span aria-hidden="true">♙</span> Мои персонажи</a>
+          <div class="cabinet-nav-divider"></div>
+          <button type="button" data-cabinet-mode="home"><span aria-hidden="true">⌂</span> Поиск пати</button>
+          <button type="button" data-cabinet-mode="find"><span aria-hidden="true">⌕</span> Найти пати</button>
+          <button type="button" data-cabinet-mode="create"><span aria-hidden="true">✚</span> Создать пати</button>
+          <button type="button" data-cabinet-mode="applications"><span aria-hidden="true">✉</span> Мои заявки</button>
+          <div class="cabinet-nav-divider"></div>
+          <a href="https://profile.elmorelab.com/ru/cabinet/warehouse" target="_blank" rel="noreferrer"><span aria-hidden="true">◇</span> Мой склад</a>
+          <a href="https://profile.elmorelab.com/ru/cabinet/shop" target="_blank" rel="noreferrer"><span aria-hidden="true">▤</span> Магазин</a>
+          <a href="https://profile.elmorelab.com/ru/cabinet/promocodes" target="_blank" rel="noreferrer"><span aria-hidden="true">✦</span> Активировать промокод</a>
+          <a href="https://profile.elmorelab.com/ru/cabinet/rating?server=1" target="_blank" rel="noreferrer"><span aria-hidden="true">▥</span> Игровой рейтинг</a>
+          <a href="https://profile.elmorelab.com/ru/cabinet/donate" target="_blank" rel="noreferrer"><span aria-hidden="true">◈</span> Пожертвование</a>
+          <a href="https://profile.elmorelab.com/ru/cabinet/tickets" target="_blank" rel="noreferrer"><span aria-hidden="true">◉</span> Поддержка</a>
+          <a href="https://profile.elmorelab.com/ru/cabinet/settings/profile" target="_blank" rel="noreferrer"><span aria-hidden="true">⚙</span> Настройки профиля</a>
+        </nav>
+        <div class="cabinet-sidebar-bottom"><span>ЛОКАЛЬНЫЙ ПРОТОТИП</span><small>Профиль и персонажи здесь тестовые. Настоящая авторизация пока не подключена.</small></div>
+      </aside>
+      <header class="cabinet-topbar">
+        <button id="cabinetMenuToggle" class="cabinet-menu-toggle" type="button" aria-label="Открыть меню" aria-expanded="false">☰</button>
+        <div class="cabinet-topbar-location"><strong>Поиск пати</strong><span>Личный кабинет / Party Finder</span></div>
+        <div class="cabinet-topbar-actions"><div class="cabinet-external-links"><a href="https://elmorelab.com/" target="_blank" rel="noreferrer">Сайт</a><a href="https://forum.elmorelab.com/" target="_blank" rel="noreferrer">Форум</a></div><span class="cabinet-lang"><img src="../assets/images/dist/flag-ru.png" alt="" /> RU</span><button id="cabinetThemeToggle" class="cabinet-theme-toggle" type="button" aria-label="Переключить тему" aria-pressed="false"><span class="cabinet-theme-glyph" aria-hidden="true">☾</span><span class="cabinet-theme-label">Тёмная тема</span></button><span class="cabinet-avatar" aria-label="Тестовый профиль">PF</span><button id="cabinetLogout" class="cabinet-logout" type="button">Выйти</button></div>
+      </header>
+    </div>
     <span id="start-countdown" hidden aria-hidden="true"></span>
     <header class="header">
       <div class="header__container _container-wide">
@@ -41,6 +74,14 @@
     </header>
 
     <main id="top" class="party-app mode-select">
+      <section class="cabinet-dashboard" id="cabinetDashboard" hidden>
+        <div class="cabinet-page-heading"><div><span class="cabinet-crumb">ЛИЧНЫЙ КАБИНЕТ / ПОИСК ПАТИ</span><h1>Поиск пати</h1><p>Найди группу для своего персонажа или открой набор в собственную команду.</p></div><span class="cabinet-demo-badge">ДЕМО-РЕЖИМ</span></div>
+        <div class="cabinet-dashboard-grid">
+          <button class="cabinet-action-card" id="cabinetFindMode" type="button"><span class="cabinet-action-icon">⌕</span><span class="cabinet-action-copy"><small>ИГРОКУ</small><strong>Найти пати</strong><span>Выбери персонажа, отметь время и посмотри подходящие вакансии.</span></span><b aria-hidden="true">→</b></button>
+          <button class="cabinet-action-card" id="cabinetCreateMode" type="button"><span class="cabinet-action-icon">✚</span><span class="cabinet-action-copy"><small>ЛИДЕРУ</small><strong>Создать пати</strong><span>Укажи состав, расписание и открой набор игроков на свободные роли.</span></span><b aria-hidden="true">→</b></button>
+        </div>
+        <div class="cabinet-dashboard-note"><span>i</span><p>Это визуальный прототип внутри кабинета. Данные персонажей и заявок пока хранятся локально; интеграция с настоящим профилем и базой заявок потребуется позже.</p></div>
+      </section>
       <section class="mode-chooser" id="modeChooser">
         <div class="chooser-intro">
           <p class="eyebrow"><span></span> ELMORELAB · PARTY FINDER</p>
@@ -183,6 +224,7 @@
       <section class="workspace application-workspace" id="myApplications" aria-labelledby="myApplicationsTitle"><div class="section-heading"><span class="step">04</span><div><p class="eyebrow">ТВОИ ОТКЛИКИ</p><h2 id="myApplicationsTitle">Мои заявки</h2></div><span class="line"></span></div><p class="application-section-lead">Можно обратиться в несколько пати одновременно. Здесь видны ответы лидеров, контакты и возможность отозвать заявку.</p><div id="myApplicationsList" class="application-list" aria-live="polite"></div></section>
 
       <section class="how" id="how-it-works"><div class="how-card"><p class="eyebrow">ПРОСТОЙ ПРИНЦИП</p><h2>Девять ролей.<br /><em>Одна команда.</em></h2><p>Мы не подбираем случайных игроков. Сервис ищет живые группы, где уже есть место твоему классу, а их расписание полностью помещается в твоё.</p><div class="how-steps"><span><b>01</b> Выбери сервер и укажи персонажа</span><span><b>02</b> Отметь часы</span><span><b>03</b> Оставь заявку</span></div></div></section>
+      <footer class="cabinet-page-footer"><span>© 2026 Elmorelab · Локальный прототип Party Finder</span><div><a href="https://profile.elmorelab.com/ru/term" target="_blank" rel="noreferrer">Пользовательское соглашение</a><a href="https://profile.elmorelab.com/ru/privacy" target="_blank" rel="noreferrer">Политика конфиденциальности</a></div></footer>
     </main>
     <footer class="footer official-footer">
       <div class="footer__container _container">
@@ -194,10 +236,11 @@
       <p class="footer-copyrights">© это эмулятор MMORPG, работающий исключительно в информационных целях.</p>
       <p class="footer-copyrights">LLC 'Taganay Group'<br />Registration Number: 307582-3301-LLC<br />Registered Address: 156/2 7 April Street, Oktyabrsky District, Bishkek, Kyrgyz Republic</p>
     </footer>
-    <script src="../shell-loader.js?v=party-create-2"></script>
+    <script src="../shell-loader.js?v=cabinet-1"></script>
     <script src="../assets/elmorelab/app.min.js" defer></script>
     <script src="../assets/vendor/tom-select/tom-select.complete.min.js"></script>
-    <script src="../app.js?v=party-controls-1"></script>
+    <script src="../app.js?v=cabinet-3"></script>
     <script src="../applications.js?v=party-controls-1"></script>
+    <script src="../cabinet.js?v=cabinet-3"></script>
   </body>
 </html>

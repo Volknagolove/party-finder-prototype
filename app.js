@@ -19,11 +19,20 @@ let lastModeTrigger = null;
 function currentAccess() { return sessionStorage.getItem(authKey); }
 function isGuest() { return currentAccess() === 'guest'; }
 function hasLocalAccess() { return ['demo', 'guest'].includes(currentAccess()); }
+function isCabinetView() { return currentAccess() === 'demo'; }
+function syncAccessShell() {
+  document.body.classList.toggle('cabinet-view', isCabinetView());
+  document.querySelector('#cabinetShell').hidden = !isCabinetView();
+}
+syncAccessShell();
 
 function updateModeUrl(mode) {
   const url = new URL(window.location.href);
   if (mode) url.searchParams.set('mode', mode);
   else url.searchParams.delete('mode');
+  url.searchParams.delete('section');
+  if (isCabinetView()) url.searchParams.set('view', 'cabinet');
+  else url.searchParams.delete('view');
   window.history.pushState({mode}, '', url);
 }
 
@@ -37,23 +46,28 @@ function closeLogin() {
 
 function showModeChooser(updateUrl = true) {
   closeLogin();
+  syncAccessShell();
   demoLogout.hidden = !hasLocalAccess();
   demoLogout.textContent = isGuest() ? 'ВЫЙТИ ИЗ ГОСТЕВОГО РЕЖИМА' : 'ВЫЙТИ ИЗ ТЕСТОВОГО АККАУНТА';
   partyApp.classList.remove('mode-find', 'mode-create');
   partyApp.classList.add('mode-select');
-  modeChooser.hidden = false;
+  modeChooser.hidden = isCabinetView();
+  document.querySelector('#cabinetDashboard').hidden = !isCabinetView();
   createParty.hidden = true;
   document.querySelector('#finderBack').hidden = true;
   finderSections.forEach(section => { section.hidden = true; });
   if (updateUrl) updateModeUrl(null);
   window.scrollTo(0, 0);
+  document.dispatchEvent(new CustomEvent('partyfinder:mode-changed', {detail:{mode:'home'}}));
 }
 
 function showSelectedMode(mode, updateUrl = true) {
   closeLogin();
+  syncAccessShell();
   partyApp.classList.remove('mode-select', 'mode-find', 'mode-create');
   partyApp.classList.add(`mode-${mode}`);
   modeChooser.hidden = true;
+  document.querySelector('#cabinetDashboard').hidden = true;
   createParty.hidden = mode !== 'create';
   document.querySelector('#finderBack').hidden = mode !== 'find';
   finderSections.forEach(section => {
@@ -83,11 +97,15 @@ document.querySelector('#findMode').addEventListener('click', event => selectMod
 document.querySelector('#createMode').addEventListener('click', event => selectMode('create', event.currentTarget));
 document.querySelector('#backToModes').addEventListener('click', () => showModeChooser());
 document.querySelector('#finderBack').addEventListener('click', () => showModeChooser());
-demoLogout.addEventListener('click', () => {
+function leaveLocalAccess() {
   sessionStorage.removeItem(authKey);
-  showModeChooser();
-  window.location.reload();
-});
+  const url = new URL(window.location.href);
+  url.searchParams.delete('view');
+  url.searchParams.delete('mode');
+  window.location.replace(url);
+}
+demoLogout.addEventListener('click', leaveLocalAccess);
+document.querySelector('#cabinetLogout').addEventListener('click', leaveLocalAccess);
 document.querySelector('#loginClose').addEventListener('click', closeLogin);
 document.querySelector('#loginBackdrop').addEventListener('click', closeLogin);
 document.querySelector('#fillDemoLogin').addEventListener('click', () => {
@@ -107,13 +125,17 @@ loginForm.addEventListener('submit', event => {
     return;
   }
   sessionStorage.setItem(authKey, 'demo');
-  showSelectedMode(pendingMode || 'find');
-  window.location.reload();
+  const url = new URL(window.location.href);
+  url.searchParams.set('view', 'cabinet');
+  url.searchParams.set('mode', pendingMode || 'find');
+  window.location.assign(url);
 });
 document.querySelector('#continueAsGuest').addEventListener('click', () => {
   sessionStorage.setItem(authKey, 'guest');
-  showSelectedMode(pendingMode || 'find');
-  window.location.reload();
+  const url = new URL(window.location.href);
+  url.searchParams.delete('view');
+  url.searchParams.set('mode', pendingMode || 'find');
+  window.location.assign(url);
 });
 const initialMode = new URL(window.location.href).searchParams.get('mode');
 if (hasLocalAccess() && ['find', 'create'].includes(initialMode)) {
