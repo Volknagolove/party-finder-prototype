@@ -1,0 +1,929 @@
+:root {
+    --modulePrimary: #bea466;
+    --moduleDark: #1d1b1a;
+}
+
+.nserver-name h2 {
+    text-transform: none !important;
+}
+
+.partner {
+	 display: inline-block; 
+}
+
+.orange {
+	color: orange;
+	font-weight: bolder;
+}
+
+.green {
+	color: greenyellow;
+	font-weight: bolder;
+}
+
+.partner::before {
+	content: "PARTNER";
+    font-family: Ubuntu;
+    position: absolute;
+    top: 7px;
+    left: 8rem;
+    width: 55px;
+    padding: 2px;
+    text-align: center;
+    color: white;
+    font-size: 10px;
+    font-weight: lighter;
+    border-radius: 0.3rem;
+    color: #e9b740;
+    border-style: solid;
+    border-width: thin;
+}
+
+.hot::before {
+	content: "HOT";
+    font-family: Ubuntu;
+    position: absolute;
+    top: 7px;
+    left: 8.9rem;
+    width: 40px;
+    padding: 2px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: bolder;
+    border-radius: 0.3rem;
+    color: red;
+    border-style: solid;
+    border-width: thin;	
+	opacity: 0.5;
+}
+
+.soon::before {
+	content: "SOON";
+    font-family: Ubuntu;
+    position: absolute;
+    top: 7px;
+    left: 8.9rem;
+    width: 40px;
+    padding: 2px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: bolder;
+    border-radius: 0.3rem;
+    color: aqua;
+    border-style: solid;
+    border-width: thin;	
+	opacity: 0.5;
+}
+
+.additional-1::before {
+	top: 30px!important;
+}
+
+.additional-2::before {
+	top: 54px!important;
+}
+
+
+.header__servers .servers-list .nserver.active .nserver-name .new::before {	
+  font-size: 10px;
+  opacity: 1; 
+}
+
+@keyframes fadein {
+  from { opacity: 0.6; }
+  to { opacity: 1;}
+}
+
+
+.new::before {
+    content: "NEW";
+    font-family: Ubuntu;
+    position: absolute;
+    top: 7px;
+    left: 8.9rem;
+    width: 40px;
+    padding: 2px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: lighter;
+    border-radius: 0.3rem;
+    color: #66ff39;
+    border-style: solid;
+    border-width: thin;
+	opacity: 0.5;
+}
+
+.bonus-start::before {
+    content: "Bonus Start";
+    font-family: Ubuntu, sans-serif;
+    position: absolute;
+    top: 0.55rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 2px 12px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    line-height: 1.4;
+    border-radius: 0.3rem;
+    color: #e9b740;
+    border: 1px solid #e9b740;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.header__servers .servers-info .bonus-start {
+    display: flex;
+    justify-content: center;
+    margin: 0.35rem 0 0.85rem;
+}
+
+.header__servers .servers-info .bonus-start::before {
+    position: static;
+    top: auto;
+    left: auto;
+    transform: none;
+}
+
+@media (max-width: 767.98px) {
+    .servers-list .bonus-start {
+        display: none !important;
+    }
+}
+
+.header__servers {
+    display: flex;
+    position: relative;
+    padding: 5rem 0 3rem 0;
+}
+
+.background {
+	background-image: url(../images/servers/bg_5.png);
+    min-height: 100%;
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	background-position: center top;
+}
+
+.header__servers .servers-wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: fit-content;
+}
+
+.header__servers .servers-container {
+    width: min(100%, 1700px);
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4rem;
+    padding: 1rem 2rem 0 2rem;
+	overflow: hidden;
+}
+
+.header__servers .servers-info {
+    width: 31%;
+}
+
+.header__servers .servers-info .nserver {
+    height: 100%;
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    transition: 0;
+}
+
+.header__servers .servers-info .nserver-icon img {
+    width: 6.5rem;
+}
+
+.header__servers .servers-info .nserver.active {
+    position: relative;
+    height: 20%;
+    opacity: 1;
+    pointer-events: all;
+    display: flex;
+    flex-direction: column;
+}
+
+.header__servers .servers-info .nserver.active .nserver-info {
+    transition: 0.5s;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.header__servers .servers-info .nserver.active .nserver-desc {
+    transition: 0.8s;
+    opacity: 1;
+    transform: translateX(0);
+    font-family: ubuntu;
+}
+
+.header__servers .servers-info .nserver.active .nserver-features li {
+    transition: 0.8s;
+    opacity: 1;
+    transform: translateX(0);
+	display: flex;
+}
+
+.nserver-features img {
+	width: 40px;
+	height:40px;
+}
+
+
+.header__servers .servers-info .nserver.active .nserver-features li:nth-child(2) {
+    transition: 1s;
+}
+
+.header__servers .servers-info .nserver.active .nserver-features li:nth-child(3) {
+    transition: 1.2s;
+}
+
+.header__servers .servers-info .nserver.active .nserver-btn {
+    gap: 1rem;
+}
+
+.header__servers .servers-info .nserver.active .nserver-btn a {
+    transition: 0.4s;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.header__servers .servers-info .nserver.active .nserver-btn a:nth-child(2) {
+    transition: 0.4s;
+}
+
+.header__servers .servers-info .nserver-info {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+    transform: translateX(4rem);
+    opacity: 0;
+    transition: 0.3s;
+}
+
+.header__servers .servers-info .nserver-status {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding: 0 0 0 1rem;
+}
+
+.header__servers .servers-info .nserver-status div {
+    display: flex;
+    gap: 1rem;
+}
+
+.nserver-status {
+	font-family: 'Ubuntu';
+}
+
+.header__servers .servers-info .nserver-status div span {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+#circle {
+  width: 8px;
+  height: 8px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  background: greenyellow;
+  margin-right: -10px;
+}
+
+.status {
+  align-items: baseline;
+}
+
+.link_button {
+    background-color: #4F8240;
+	text-shadow: 0 0.2rem 0.2rem rgba(0, 0, 0, 0.325);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    padding: 5px 20px 5px;
+    text-align: revert-layer;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.link-container a:hover {
+    filter: brightness(120%);
+    transform: scale(1.04) !important;
+	color: #fff
+}
+
+.link-container {
+	margin-right: 1rem;
+	margin-top: 6px;
+}
+
+.header__servers .servers-info .nserver-status div span.offline::before {
+    background-color: rgb(141, 33, 33);
+    border: 1px solid rgb(255, 47, 47);
+}
+
+.header__servers .servers-info .nserver-status div span::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 100%;
+    left: -15px;
+    position: absolute;
+}
+
+.header__servers .servers-info .nserver-status ul {
+    font-size: 0.9rem;
+    width: 70%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.header__servers .servers-info .nserver-status ul li {
+    opacity: 0.8;
+    display: flex;
+    justify-content: space-between;
+}
+
+.header__servers .servers-info .nserver-name {
+    display: flex;
+    text-transform: uppercase;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 0.8rem;
+}
+
+.header__servers .servers-info .nserver-name h1 {
+    font-size: 2rem;
+	text-transform: none;
+}
+
+.header__servers .servers-info .nserver-name span {
+    color: wheat;
+    font-size: 1.2rem;
+}
+
+.header__servers .servers-info .nserver-desc {
+    margin-bottom: 1rem;
+    opacity: 0.8;
+    line-height: 1.5rem;
+    transform: translateX(4rem);
+    opacity: 0;
+    transition: 0.3s;
+}
+
+.header__servers .servers-info .nserver-features {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin: 2.5rem 0 2.5rem 0;
+}
+
+.header__servers .servers-info .nserver-features li {
+    transform: translateX(4rem);
+    opacity: 0;
+    transition: 0.3s;
+}
+
+.header__servers .servers-info .nserver-features li p {
+    text-align: center;
+    margin: 0.8rem auto 0 auto;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    width: 60%;
+    opacity: 0.8
+	line-height: 1.5;
+}
+
+.header__servers .servers-info .nserver-features li div {
+    height: 3rem;
+    display: flex;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+}
+
+.header__servers .servers-info .nserver-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header__servers .servers-info .nserver-btn a {
+    display: flex;
+    width: min(100%, 197px);
+    height: 50px;
+    border-radius: 10px;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-transform: uppercase;
+    text-shadow: 0 0.2rem 0.2rem rgba(0, 0, 0, 0.325);
+    transform: translateX(4rem);
+    opacity: 0;
+}
+
+.nserver-btn a {
+    display: flex;
+    width: min(100%, 197px);
+    height: 25px;
+    border-radius: 10px;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-transform: uppercase;
+    text-shadow: 0 0.2rem 0.2rem rgba(0, 0, 0, 0.325);
+    transform: translateX(4rem);
+    opacity: 0;
+}
+
+.header__servers .servers-info .nserver-btn a:hover {
+    filter: brightness(120%);
+    transform: scale(1.04) !important;
+}
+
+.header__servers .servers-info .nserver-btn a:nth-child(1) {
+    background-color: rgba(255, 255, 255, 0.2588235294);
+}
+
+.header__servers .servers-info .nserver-btn a:nth-child(2) {
+    background-color: #4F8240;
+}
+
+.header__servers .servers-list {
+    width: 40%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    justify-content: center;
+}
+
+.header__servers .servers-list .nserver {
+    text-align: center;
+    border-radius: 1.2rem;
+    padding-right: 3rem;
+    padding-left: 3rem;
+    padding-bottom: 1rem;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    align-items: center;
+}
+
+.header__servers .servers-list .nserver:hover .nserver-icon img {
+    opacity: 1;
+}
+
+.header__servers .servers-list .nserver::before {
+    content: "";
+    width: 100%;
+    border-radius: 1.2rem;
+    height: 100%;
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.07);
+    transform: scale(0);
+    opacity: 0;
+    transition: 0.3s;
+}
+
+.header__servers .servers-list .nserver.active::before {
+    transform: scale(1);
+    opacity: 1;
+}
+
+
+.header__servers .servers-list .nserver.active .nserver-icon img {
+    width: 4rem;
+    opacity: 1;
+}
+
+.header__servers .servers-list .nserver.active .nserver-name h2 {
+    transform: scale(1.15);
+}
+
+.header__servers .servers-list .nserver-icon {
+    height: 6rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    margin: 0 0 1rem 0;
+}
+
+.header__servers .servers-list .nserver-icon img {
+    width: 3.5rem;
+    opacity: 0.7;
+    transition: 0.3s;
+}
+
+
+.header__servers .servers-list .nserver-status {
+    display: flex;
+    gap: 1rem;
+}
+
+.header__servers .servers-list .nserver-status div {
+    display: flex;
+    gap: 1rem;   
+    align-items: baseline !important;
+}
+
+.header__servers .servers-list .nserver-status svg {
+    display: none;
+}
+
+.header__servers .servers-list .nserver-name {
+    margin: 0 0 0.5rem 0;
+    text-transform: uppercase;
+}
+
+.header__servers .servers-list .nserver-name h2 {
+    font-size: 1.3rem;
+    margin: 0 0 0.5rem 0;
+    transition: 0.3s;
+}
+
+.header__servers .servers-list .nserver-name span {
+    font-size: 0.9rem;
+    opacity: 0.4;
+}
+
+@media (max-width: 1200px) {
+    .header__servers .servers-container {
+        justify-content: center;
+        gap: 3rem;
+        padding: 2rem;
+    }
+
+    .header__servers .servers-info {
+        width: 50%;
+    }
+
+    .header__servers .servers-list {
+        width: 50%;
+    }
+}
+
+@media (max-width: 769px) {
+    .header__servers .servers-container {
+        flex-wrap: wrap;
+        flex-direction: column-reverse;
+        padding: 0;
+        gap: 0;
+    }
+
+    .header__servers .servers-wrapper {
+        background-color: transparent;
+        border: none;
+    }
+
+    .header__servers .servers-list {
+        width: 100%;
+        gap: 0;
+        position: relative;
+        z-index: 2;
+    }
+
+    .header__servers .servers-list::before {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 150%;
+        opacity: 0.8;
+        background: url(../../images/section-clouds.webp) bottom;
+        background-size: 864px;
+    }
+
+    .header__servers .servers-list .nserver:not(:last-child) {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .header__servers .servers-list .nserver {
+        border-radius: 0;
+        width: 100%;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 5vw;
+        padding: 1rem 2rem;
+        position: relative;
+    }
+
+    .header__servers .servers-list .nserver.active {
+        display: none;
+    }
+
+    .header__servers .servers-list .nserver-icon {
+        height: fit-content;
+        margin: 0;
+    }
+
+    .header__servers .servers-list .nserver-icon img {
+        width: 12vw;
+    }
+
+    .header__servers .servers-list .nserver-name {
+        margin: 0;
+        padding-top: 0.5rem;
+        text-align: left;
+    }
+
+    .header__servers .servers-list .nserver-name h2 {
+        margin-bottom: 0;
+        font-size: 1.1rem;
+    }
+
+    .header__servers .servers-list .nserver-name span {
+        margin-bottom: 0;
+    }
+
+    .header__servers .servers-list .nserver-status {
+        flex-direction: row;
+        gap: 0.2rem;
+        padding-top: 0.3rem;
+        position: absolute;
+        right: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .header__servers .servers-list .nserver-status div {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .header__servers .servers-list .nserver-status svg {
+        width: 1.8rem;
+        height: 1.8rem;
+        opacity: 0.6;
+        display: block;
+    }
+
+    .header__servers .servers-list .nserver-status svg path {
+        fill: white;
+    }
+
+    .header__servers .servers-info {
+        width: 100%;
+        padding: 2.5rem 1.5rem 1.5rem 1.5rem;
+        background-color: rgba(0, 0, 0, 0.3);
+    }
+
+    .header__servers .servers-info .nserver-server {
+        width: 50%;
+    }
+
+    .header__servers .servers-info .nserver-server ul {
+        width: 100%;
+    }
+
+    .header__servers .servers-info .nserver-status div {
+        gap: 0;
+    }
+
+    .header__servers .servers-info .nserver-status div span strong {
+        display: none;
+    }
+
+    .header__servers .servers-info .nserver-btn {
+        gap: 1rem;
+        font-size: 1.1rem;
+    }
+
+    .header__servers .servers-info .nserver-btn a {
+        width: 100%;
+    }
+
+    .header__servers .servers-info .nserver-features {
+        margin: 1rem 0 1.5rem 0;
+        gap: 0;
+    }
+
+    .header__servers .servers-info .nserver-features li p {
+        width: 100%;
+        text-align: center;
+    }
+
+    .header__servers .servers-info .nserver-features img {
+        transform: scale(0.6);
+    }
+
+    .header__servers .servers-info .nserver-name {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .header__servers .servers-info .nserver-icon img {
+        width: 15vw;
+    }
+
+    .header__servers .servers-info .nserver-desc {
+        text-align: center;
+    }
+}
+
+@media (max-width: 769px) {
+    .header__servers {
+        padding: 7rem 0;
+    }
+
+    .header__servers::before {
+        background: url(../../images/hero-bg-.webp) top no-repeat;
+        background-size: auto;
+    }
+}
+
+@media (max-width: 580px) {
+    .header__servers {
+        padding: 4.5rem 0;
+    }
+}
+
+.news-list {
+    width: min(100%, 1280px);
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    padding: 0rem 0;
+    gap: 3rem;
+}
+
+.news-list li {
+    width: 33.3%;
+}
+
+.news-list li a {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    color: rgba(255, 255, 255, 0.8);
+    align-items: flex-end;
+}
+
+.news-list li a .info-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.news-list li a .nbtn {
+    display: flex;
+    padding: 0.8rem 1.5rem 0.6rem 1.5rem;
+    position: relative;
+    width: fit-content;
+    margin: 1.2rem 0 0 0;
+}
+
+.news-list li a .nbtn span {
+    position: relative;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    text-shadow: 0 0 1rem black;
+    z-index: 1;
+}
+
+.news-list li a .nbtn:hover::before {
+    opacity: 1;
+}
+
+.news-list li a .nbtn::before {
+    transition: 0.3s;
+    opacity: 0.5;
+    content: "";
+    position: absolute;
+    width: 100%;
+    top: 0;
+    left: 0;
+    height: 100%;
+    border-radius: 0.5rem;
+    background-color: var(--modulePrimary);
+}
+
+.news-list li a .news-wrapper {
+    height: 100%;
+    background-color: var(--moduleDark);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.news-list li a .news-info {
+    height: 55%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.news-list li a .news-info .info {
+    padding: 1.5rem 0;
+}
+
+.news-list li a .news-info .info h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+}
+
+.news-list li a .news-info .info p {
+    font-size: 0.85rem;
+    line-height: 1.3rem;
+}
+
+.news-list li a .news-info .info div {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.news-list li a .news-info .info div span {
+    padding: 0.5rem 1rem 0.3rem 1rem;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    text-shadow: 0 0 1rem black;
+}
+
+.news-list li a .news-info .info div span:nth-child(1) {
+    border-radius: 0.2rem;
+    background-color: var(--modulePrimary);
+}
+
+.news-list li a .news-img {
+    height: 13rem;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.news-list li a .news-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@media (max-width: 1200px) {
+    .news-list {
+        overflow-x: scroll;
+        padding: 0 3rem 2rem 3rem;
+    }
+
+    .news-list li {
+        width: 350px;
+    }
+
+    .news-list li a {
+        width: 350px;
+    }
+}
+
+@media (max-width: 769px) {
+    .news-list {
+        overflow-x: scroll;
+        padding: 0 1rem 2rem 1rem;
+        gap: 1.5rem;
+    }
+
+    .news-list::-webkit-scrollbar {
+        height: 0 !important;
+        width: 0 !important;
+    }
+
+    .news-list::-webkit-scrollbar-thumb {
+        height: 0 !important;
+    }
+
+    .news-list li {
+        width: 280px;
+    }
+
+    .news-list li a {
+        width: 280px;
+    }
+
+    .news-list li a .news-img {
+        height: 10rem;
+    }
+	.footer-nav {
+		display:block  !important;
+	}
+}
+
+/*# sourceMappingURL=app.css.map */

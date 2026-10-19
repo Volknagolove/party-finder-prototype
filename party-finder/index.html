@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Elmore Party Finder · Поиск пати</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/elmorelab/main.css" />
+    <link rel="stylesheet" href="../assets/elmorelab/app.css" />
+    <link rel="stylesheet" href="../assets/vendor/tom-select/tom-select.default.min.css" />
+    <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="../overrides.css?v=roster-search-2" />
+  </head>
+  <body>
+    <div class="noise"></div>
+    <header class="header">
+      <div class="header__container _container-wide">
+        <div class="header__menu menu">
+          <a href="https://elmorelab.com/" class="logotype-sm" target="_blank" rel="noreferrer">ElmoreLab</a>
+          <nav class="menu__body d-flex" aria-label="Основная навигация">
+            <ul class="menu__list">
+              <li class="menu__item"><a class="menu__link" href="https://elmorelab.com/" target="_blank" rel="noreferrer">Главная</a></li>
+              <li class="menu__item -menu-account"><a class="menu__link" href="https://profile.elmorelab.com/" target="_blank" rel="noreferrer">Настройки аккаунта</a></li>
+              <li class="menu__item"><a class="menu__link" href="https://elmorelab.com/sponsors.html" target="_blank" rel="noreferrer">Зал славы</a></li>
+              <li class="menu__item"><a class="menu__link" href="https://elmorelab.com/tourneys.html" target="_blank" rel="noreferrer">Турниры</a></li>
+              <li class="menu__item"><a class="menu__link _active" href="#finder">Поиск пати</a></li>
+              <li class="menu__item"><a class="menu__link" href="https://forum.elmorelab.com/" target="_blank" rel="noreferrer">Форум</a></li>
+              <li class="menu__item -menu-database"><a class="menu__link" href="https://knowledgedb.elmorelab.com/" target="_blank" rel="noreferrer">Библиотека</a></li>
+            </ul>
+          </nav>
+          <a class="btn btn-cabinet menu__link" href="https://profile.elmorelab.com/" title="profile" target="_blank" rel="noreferrer"><svg width="27" height="22" viewBox="0 0 27 22" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="13.5" cy="6.25" r="5.25" stroke-width="2"/><path d="M1 20.9151C11.9091 7.73326 22.2121 15.4227 26 20.9151" stroke-width="2"/></svg><span class="btn-cabinet__link">Профиль</span></a>
+          <a class="btn btn-cabinet menu__link" href="https://knowledgedb.elmorelab.com/" title="library" target="_blank" rel="noreferrer"><img src="../assets/images/dist/db-ico.webp" width="27" height="22" alt="" /><span class="btn-cabinet__link">Библиотека</span></a>
+          <div class="header-lang"><a href="#ru" class="header-lang__link _ru _active" data-lang="ru"><span>Ru</span></a><a href="#pt" class="header-lang__link" style="background-image:url(../assets/images/dist/flag-pt.png)" data-lang="pt"><span>Pt</span></a><a href="#el" class="header-lang__link" style="background-image:url(../assets/images/dist/flag-el.png)" data-lang="el"><span>El</span></a><a href="#ua" class="header-lang__link" style="background-image:url(../assets/images/dist/flag-ua.png)" data-lang="ua"><span>Ua</span></a><a href="#en" class="header-lang__link _en" data-lang="en"><span>En</span></a></div>
+          <div class="menu__icon" id="menuButton" aria-label="Открыть меню"><span></span></div>
+        </div>
+      </div>
+    </header>
+
+    <main id="top" class="party-app mode-select">
+      <section class="mode-chooser" id="modeChooser">
+        <div class="chooser-intro">
+          <p class="eyebrow"><span></span> ELMORELAB · PARTY FINDER</p>
+          <h1>Твоя история<br /><em>начинается с пати.</em></h1>
+          <p>Вместе проще покорять Aden. Выбери, хочешь ли ты присоединиться к группе или собрать свою девятку.</p>
+          <div class="chooser-meta"><span>✦ 9 игроков в пати</span><span>✦ 2 пути к одной команде</span></div>
+        </div>
+        <div class="mode-cards" aria-label="Выбор режима">
+          <button class="mode-card mode-card-find" id="findMode" type="button" data-mode="find"><span class="mode-card-glow"></span><span class="mode-card-visual"><img src="../assets/warriors.png" alt="" /></span><span class="mode-card-content"><span class="mode-number">01 / ИСКАТЬ</span><strong>Найти<br />пати</strong><small>Твой класс и расписание помогут найти группу, которой не хватает именно тебя.</small><span class="mode-cta">НАЙТИ СВОЮ ГРУППУ <b aria-hidden="true">↗</b></span></span></button>
+          <button class="mode-card mode-card-create" id="createMode" type="button" data-mode="create"><span class="mode-card-glow"></span><span class="mode-card-content"><span class="mode-number">02 / СОБИРАТЬ</span><strong>Создать<br />пати</strong><small>Стань лидером: задай время игры и открой набор в свою команду из девяти игроков.</small><span class="mode-cta">СОБРАТЬ КОМАНДУ <b aria-hidden="true">↗</b></span></span></button>
+        </div>
+        <p class="chooser-footnote">Выбор можно изменить в любой момент.</p>
+      </section>
+
+      <section class="create-party-panel" id="createParty" hidden>
+        <button class="flow-back" id="backToModes" type="button">← К ВЫБОРУ РЕЖИМА</button>
+        <div class="section-heading"><span class="step">01</span><div><p class="eyebrow">НОВАЯ ГРУППА</p><h2>Создай пати для набора</h2></div><span class="line"></span></div>
+        <div class="create-layout">
+          <form class="create-party-card" id="createPartyForm">
+            <p class="eyebrow">ШАГ 01 / СЕРВЕР</p>
+            <h3>Где играет твоя пати?</h3>
+            <div class="server-options" id="createServerOptions" role="group" aria-label="Выбор сервера"></div>
+            <p class="eyebrow create-subheading">ШАГ 02 / ОСНОВА</p>
+            <h3>О команде</h3>
+            <div class="create-form-grid">
+              <label>Название пати<input id="partyName" name="partyName" maxlength="36" placeholder="Например, Night Watch" required /></label>
+              <label>Твой персонаж<select id="leaderCharacter" name="leaderCharacter" required disabled><option value="">Сначала выбери сервер</option></select></label>
+            </div>
+            <div class="selected-character" id="selectedCharacter" hidden aria-live="polite"><span class="selected-character-mark" id="characterMark"></span><div class="selected-character-name"><small id="characterServer">ПЕРСОНАЖ</small><strong id="characterName"></strong></div><div class="selected-character-stat"><small>ТВОЙ КЛАСС</small><strong id="characterClass"></strong></div><div class="selected-character-stat"><small>УРОВЕНЬ</small><strong id="characterLevel"></strong></div></div>
+            <p class="create-help leader-help">Пока это тестовые персонажи локального аккаунта. В рабочей версии список, класс и актуальный уровень придут из профиля.</p>
+            <p class="eyebrow create-subheading">ШАГ 03 / ВРЕМЯ</p>
+            <h3>Когда играете?</h3>
+            <p class="create-help">Выделяй часы зажатой ЛКМ. Можно добавлять и убирать прямоугольники сразу в нескольких днях.</p>
+            <div class="create-schedule-wrap">
+              <div class="create-time-labels"><span>ВРЕМЯ</span><div id="createTimeLabels"></div></div>
+              <div id="createScheduleGrid" class="create-schedule-grid"></div>
+            </div>
+            <p class="create-schedule-foot"><span><b id="createSelectedHours">0</b> часов игры в неделю</span><span>CET (UTC+1)</span></p>
+            <p class="eyebrow create-subheading">ШАГ 04 / СОСТАВ</p>
+            <div class="create-roster-heading"><div><h3>Уже в пати</h3><p class="create-help">Лидер учитывается автоматически. Добавь имена и классы остальных игроков.</p></div><button id="addMember" class="roster-add" type="button">+ ИГРОК</button></div>
+            <div class="leader-row"><span class="create-slot-number">01</span><span>Ты · лидер</span><strong id="leaderCharacterDisplay">Персонаж не выбран</strong></div>
+            <div id="memberList" class="roster-list"></div>
+            <div class="create-roster-heading create-roster-heading-open"><div><h3>Кого ищете</h3><p class="create-help">Укажи класс и допустимый уровень для каждой вакансии.</p></div><button id="addVacancy" class="roster-add" type="button">+ ВАКАНСИЯ</button></div>
+            <div id="vacancyList" class="roster-list"></div>
+            <p id="rosterCount" class="roster-count" aria-live="polite"></p>
+            <p id="createFormError" class="create-form-error" role="alert" hidden></p>
+            <button class="find-button create-preview-button" type="submit"><span>ПОСМОТРЕТЬ КАРТОЧКУ ПАТИ</span><b>→</b></button>
+            <p class="create-party-note">Это макет объявления. Публикация станет доступна после подключения базы персонажей.</p>
+          </form>
+          <aside class="create-side"><p class="eyebrow">ДЕВЯТЬ МЕСТ · ОДНА ЦЕЛЬ</p><h3>Собери тех,<br />кто прикроет<br /><em>твою спину.</em></h3><p>Сначала отметь тех, кто уже с тобой, затем опиши открытые места. Недельная сетка покажет, когда вы играете вместе.</p><div class="create-side-count"><b id="openSlotCount">1</b><span id="openSlotLabel">вакансия для набора</span></div></aside>
+        </div>
+        <section class="created-preview" id="createdPreview" hidden aria-live="polite"></section>
+      </section>
+
+      <div class="login-overlay" id="loginOverlay" hidden>
+        <div class="login-backdrop" id="loginBackdrop"></div>
+        <section class="login-dialog" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+          <button class="login-close" id="loginClose" type="button" aria-label="Закрыть окно входа">×</button>
+          <p class="eyebrow"><span></span> ВХОД В PARTY FINDER</p>
+          <h2 id="loginTitle">Остался один шаг<br /><em>до команды.</em></h2>
+          <p id="loginContext">Войди, чтобы продолжить.</p>
+          <form id="loginForm" class="login-form">
+            <label>Email<input id="loginEmail" type="email" placeholder="Email" autocomplete="username" required /></label>
+            <label>Пароль<input id="loginPassword" type="password" placeholder="Пароль" autocomplete="current-password" required /></label>
+            <p class="login-error" id="loginError" role="alert" hidden>Неверный тестовый email или пароль.</p>
+            <button class="find-button" type="submit"><span>ПРОДОЛЖИТЬ</span><b>→</b></button>
+          </form>
+          <div class="demo-credentials"><span>ТЕСТОВЫЙ ВХОД</span><code>demo@party.local</code><code>Party2026!</code><button id="fillDemoLogin" type="button">ПОДСТАВИТЬ ДАННЫЕ ↗</button></div>
+          <a class="official-login-link" href="https://profile.elmorelab.com/login" target="_blank" rel="noreferrer">Официальный профиль ElmoreLab ↗</a>
+          <p class="login-note">Это локальный прототип. Здесь действуют только тестовые данные; пароль не сохраняется.</p>
+        </section>
+      </div>
+
+      <button class="flow-back finder-back" id="finderBack" type="button" hidden>← К ВЫБОРУ РЕЖИМА</button>
+
+      <section class="hero" id="finder">
+        <div class="hero-copy">
+          <p class="eyebrow"><span></span> ELMORELAB · PARTY FINDER</p>
+          <h1>НАЙДИ СВОЮ<br /><em>ДЕВЯТКУ.</em></h1>
+          <p class="hero-text">Выбери сервер и своего персонажа, отметь время игры — мы покажем группы, которым не хватает именно тебя.</p>
+          <div class="hero-meta"><span>⚔ 9 игроков в пати</span><span>◷ Твой часовой пояс: CET</span></div>
+        </div>
+        <div class="hero-art" aria-hidden="true"><img class="hero-warriors" src="../assets/warriors.png" alt="" /></div>
+      </section>
+
+      <section class="workspace">
+        <div class="section-heading"><span class="step">01</span><div><p class="eyebrow">ТВОЙ ПЕРСОНАЖ</p><h2>Сервер и персонаж</h2></div><span class="line"></span></div>
+        <div class="identity-flow">
+          <div class="identity-step"><span class="identity-index">01 / СЕРВЕР</span><h3>Сначала выбери сервер</h3><p>Персонажи и пати других серверов не смешиваются.</p><div class="server-options" id="findServerOptions" role="group" aria-label="Выбор сервера"></div></div>
+          <div class="identity-step"><span class="identity-index">02 / ПЕРСОНАЖ</span><h3>Кого ты поведёшь в бой?</h3><p>Класс и уровень берутся из выбранного персонажа.</p><label class="find-character-label">Твой персонаж<select id="findCharacter" disabled><option value="">Сначала выбери сервер</option></select></label><div class="selected-character" id="findSelectedCharacter" hidden aria-live="polite"><span class="selected-character-mark" id="findCharacterMark"></span><div class="selected-character-name"><small id="findCharacterServer">ПЕРСОНАЖ</small><strong id="findCharacterName"></strong></div><div class="selected-character-stat"><small>ТВОЙ КЛАСС</small><strong id="selectedClass">Класс не выбран</strong></div><div class="selected-character-stat"><small>УРОВЕНЬ</small><strong id="findCharacterLevel"></strong></div></div></div>
+        </div>
+          <div class="class-columns" hidden aria-hidden="true">
+            <div class="class-column"><label>ТАНКИ · 4</label><button class="class-card" data-class="Paladin" data-short="Pala"><b>Pala</b><span>Paladin<small>Человек</small></span></button><button class="class-card" data-class="Dark Avenger" data-short="DA"><b>DA</b><span>Dark Avenger<small>Человек</small></span></button><button class="class-card" data-class="Temple Knight" data-short="TK"><b>TK</b><span>Temple Knight<small>Светлый эльф</small></span></button><button class="class-card" data-class="Shillien Knight" data-short="SK"><b>SK</b><span>Shillien Knight<small>Тёмный эльф</small></span></button></div>
+            <div class="class-column"><label>САППОРТЫ · 8</label><button class="class-card" data-class="Bishop" data-short="BP"><b>BP</b><span>Bishop<small>Хил</small></span></button><button class="class-card" data-class="Elven Elder" data-short="EE"><b>EE</b><span>Elven Elder<small>Хил / речардж</small></span></button><button class="class-card" data-class="Shillien Elder" data-short="SE"><b>SE</b><span>Shillien Elder<small>Хил / баф / речардж</small></span></button><button class="class-card" data-class="Prophet" data-short="PP"><b>PP</b><span>Prophet<small>Бафер</small></span></button><button class="class-card" data-class="Warcryer" data-short="WC"><b>WC</b><span>Warcryer<small>Бафер</small></span></button><button class="class-card" data-class="Overlord" data-short="OL"><b>OL</b><span>Overlord<small>Клановый бафер / дебафер</small></span></button><button class="class-card" data-class="Swordsinger" data-short="SWS"><b>SWS</b><span>Swordsinger<small>Песни</small></span></button><button class="class-card" data-class="Bladedancer" data-short="BD"><b>BD</b><span>Bladedancer<small>Танцы</small></span></button></div>
+            <div class="class-column"><label>ФИЗИЧЕСКИЕ ДД · 12</label><button class="class-card" data-class="Gladiator" data-short="Glad"><b>Glad</b><span>Gladiator<small>Мили ДД</small></span></button><button class="class-card" data-class="Warlord" data-short="WL"><b>WL</b><span>Warlord<small>Пика / AOE</small></span></button><button class="class-card" data-class="Treasure Hunter" data-short="TH"><b>TH</b><span>Treasure Hunter<small>Даггер</small></span></button><button class="class-card" data-class="Plains Walker" data-short="PW"><b>PW</b><span>Plains Walker<small>Даггер</small></span></button><button class="class-card" data-class="Abyss Walker" data-short="AW"><b>AW</b><span>Abyss Walker<small>Даггер</small></span></button><button class="class-card" data-class="Hawkeye" data-short="HE"><b>HE</b><span>Hawkeye<small>Лучник</small></span></button><button class="class-card" data-class="Silver Ranger" data-short="SR"><b>SR</b><span>Silver Ranger<small>Лучник</small></span></button><button class="class-card" data-class="Phantom Ranger" data-short="PR"><b>PR</b><span>Phantom Ranger<small>Лучник</small></span></button><button class="class-card" data-class="Destroyer" data-short="Destro"><b>Destro</b><span>Destroyer<small>Мили ДД</small></span></button><button class="class-card" data-class="Tyrant" data-short="Tyr"><b>Tyr</b><span>Tyrant<small>Мили ДД</small></span></button><button class="class-card" data-class="Bounty Hunter" data-short="BH"><b>BH</b><span>Bounty Hunter<small>Спойлер / физ. ДД</small></span></button><button class="class-card" data-class="Warsmith" data-short="Craft"><b>Craft</b><span>Warsmith<small>Крафтер / физ. ДД</small></span></button></div>
+            <div class="class-column"><label>МАГИ · 4</label><button class="class-card" data-class="Sorcerer" data-short="Sorc"><b>Sorc</b><span>Sorcerer<small>Огненный маг</small></span></button><button class="class-card" data-class="Spellsinger" data-short="SPS"><b>SPS</b><span>Spellsinger<small>Водный маг</small></span></button><button class="class-card" data-class="Spellhowler" data-short="SH"><b>SH</b><span>Spellhowler<small>Ветряной маг</small></span></button><button class="class-card" data-class="Necromancer" data-short="Necro"><b>Necro</b><span>Necromancer<small>Маг / дебафер</small></span></button><label class="sub-label">САММОНЕРЫ · 3</label><button class="class-card" data-class="Warlock" data-short="Cat"><b>Cat</b><span>Warlock<small>Котовод</small></span></button><button class="class-card" data-class="Elemental Summoner" data-short="ES"><b>ES</b><span>Elemental Summoner<small>Саммонер</small></span></button><button class="class-card" data-class="Phantom Summoner" data-short="PS"><b>PS</b><span>Phantom Summoner<small>Саммонер</small></span></button></div>
+          </div>
+      </section>
+
+      <section class="workspace schedule-section">
+        <div class="section-heading"><span class="step">02</span><div><p class="eyebrow">ТВОЙ ОНЛАЙН</p><h2>Когда ты выходишь в Aden?</h2></div><span class="line"></span></div>
+        <div class="schedule-top"><p>Все 7 дней уже включены. Зажми ЛКМ и проведи по часам, когда ты можешь играть.</p><div class="schedule-legend"><span><i class="legend-on"></i> могу играть</span><span><i class="legend-off"></i> не уверен</span></div></div>
+        <div class="schedule-wrap">
+          <div class="time-labels"><span>ВРЕМЯ</span><div id="timeLabels"></div></div>
+          <div id="scheduleGrid" class="schedule-grid"></div>
+        </div>
+        <div class="schedule-footer"><span><b id="selectedHours">0</b> часов отмечено в неделю</span><span>Время указано в <b>CET (UTC+1)</b></span></div>
+        <button class="find-button" id="findButton"><span>НАЙТИ ДОСТУПНЫЕ ПАТИ</span><b>→</b></button>
+      </section>
+
+      <section class="results workspace" id="results" hidden>
+        <div class="section-heading"><span class="step">03</span><div><p class="eyebrow">РЕЗУЛЬТАТЫ ПОИСКА</p><h2>Пати, которым не хватает тебя</h2></div><span class="line"></span></div>
+        <div class="results-bar"><p id="resultSummary"></p><button id="editSearch">← ИЗМЕНИТЬ ПОИСК</button></div>
+        <div id="partyResults" class="party-results"></div>
+      </section>
+
+      <section class="how" id="how-it-works"><div class="how-card"><p class="eyebrow">ПРОСТОЙ ПРИНЦИП</p><h2>Девять ролей.<br /><em>Одна команда.</em></h2><p>Мы не подбираем случайных игроков. Сервис ищет живые группы, где уже есть место твоему классу, а их расписание полностью помещается в твоё.</p><div class="how-steps"><span><b>01</b> Выбери сервер и персонажа</span><span><b>02</b> Отметь часы</span><span><b>03</b> Вступи в пати</span></div></div></section>
+    </main>
+    <footer class="footer official-footer">
+      <div class="footer__container _container">
+        <div class="footer-col col-controls"><a target="_blank" href="https://l2pick.com/"><img src="../assets/elmorelab/images/dist/l2pick2.jpg" alt="L2PICK.com" /></a></div>
+        <div class="footer-col col-nav"><ul class="footer-nav"><li class="footer-nav__link"><a href="https://elmorelab.com/privacy_policy.html">Политика конфиденциальности</a></li><li class="footer-nav__link"><a href="https://elmorelab.com/contacts.html">Контакты</a></li><li class="footer-nav__link"><a href="https://elmorelab.com/user_agreement.html">Пользовательское соглашение</a></li></ul></div>
+        <div class="footer-col col-nav"><a href="https://l2.hopzone.net/site/vote/106572/1" target="_blank"><img src="../assets/elmorelab/images/dist/hopzone-vote.png" alt="Vote for ELMORELAB.COM" /></a><a href="https://la2.mmotop.ru/servers/38022/votes/new" target="_blank"><img src="../assets/elmorelab/images/dist/mmotop-vote.png" alt="Рейтинг серверов mmotop" /></a></div>
+      </div>
+      <a href="#top" class="back-top" title="Наверх">↑</a>
+      <p class="footer-copyrights">© это эмулятор MMORPG, работающий исключительно в информационных целях.</p>
+      <p class="footer-copyrights">LLC 'Taganay Group'<br />Registration Number: 307582-3301-LLC<br />Registered Address: 156/2 7 April Street, Oktyabrsky District, Bishkek, Kyrgyz Republic</p>
+    </footer>
+    <script src="../shell-loader.js?v=party-create-2"></script>
+    <script src="../assets/elmorelab/app.min.js" defer></script>
+    <script src="../assets/vendor/tom-select/tom-select.complete.min.js"></script>
+    <script src="../app.js?v=roster-search-2"></script>
+  </body>
+</html>
