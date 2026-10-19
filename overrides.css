@@ -68,13 +68,16 @@ body > header.header{position:relative}
 .mode-card{position:relative;isolation:isolate;min-height:480px;overflow:hidden;padding:0;display:block;border:1px solid #54403a;background:#191719;box-shadow:0 18px 46px rgba(0,0,0,.19);transition:transform .32s ease,border-color .32s ease,box-shadow .32s ease}
 .mode-card:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
 .mode-card:hover{transform:translateY(-7px);box-shadow:0 29px 65px rgba(0,0,0,.33);border-color:#c47555;background-color:#191719}
-.mode-card-create{background-color:#211a19;background-image:linear-gradient(90deg,rgba(20,17,18,.76),rgba(20,17,18,.12) 72%),url('assets/lineage2-orc.png'),radial-gradient(circle at 52% 32%,#4e3024,#201a19 57%,#171619 100%);background-size:cover,auto 94%,cover;background-position:center,right -36px top 5px,center;background-repeat:no-repeat}
-.mode-card-create:hover{border-color:#dca05c;background-color:#211a19}
+.mode-card-create{background-color:#211a19;background-image:linear-gradient(90deg,rgba(20,17,18,.76),rgba(20,17,18,.12) 72%),radial-gradient(circle at 52% 32%,#4e3024,#201a19 57%,#171619 100%);background-size:cover,cover;background-position:center,center;background-repeat:no-repeat}
+.mode-card-create::before{position:absolute;z-index:0;inset:0;content:"";background-image:url('assets/lineage2-orc.png');background-size:auto 94%;background-position:right -36px top 5px;background-repeat:no-repeat;filter:drop-shadow(0 18px 22px rgba(0,0,0,.32));transform-origin:right center;transition:transform .6s ease;pointer-events:none}
+.mode-card-create:hover{border-color:#dca05c;background-color:#211a19;background-image:linear-gradient(90deg,rgba(20,17,18,.76),rgba(20,17,18,.12) 72%),radial-gradient(circle at 52% 32%,#4e3024,#201a19 57%,#171619 100%);background-size:cover,cover;background-position:center,center;background-repeat:no-repeat}
+.mode-card-create:hover::before{transform:scale(1.04) translateY(-4px)}
 .mode-card-glow{position:absolute;z-index:0;inset:0;background:linear-gradient(180deg,transparent 15%,rgba(17,14,15,.12) 38%,rgba(13,12,14,.98) 86%)}
 .mode-card-visual{position:absolute;inset:0;overflow:hidden;pointer-events:none}
 .mode-card-find .mode-card-visual img{position:absolute;right:-12%;top:-4%;width:106%;max-width:none;height:auto;filter:drop-shadow(0 22px 25px rgba(0,0,0,.4));transition:transform .6s ease}
 .mode-card-find:hover .mode-card-visual img{transform:scale(1.04) translateY(-4px)}
 .mode-card-find .mode-card-glow{z-index:1;background:linear-gradient(180deg,rgba(15,13,14,.03) 0%,rgba(18,15,16,.26) 40%,#131215 86%)}
+.mode-card-create .mode-card-glow{z-index:1}
 .mode-card-create .mode-card-content small{max-width:60%}
 .mode-card-content{position:absolute;z-index:2;inset:0;padding:28px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;color:#fff}
 .mode-number{color:#d9a878;font:800 10px Manrope;letter-spacing:.15em}
@@ -113,7 +116,7 @@ body > header.header{position:relative}
 @keyframes loginEnter{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
 @media(max-width:900px){.mode-chooser,.create-party-panel,.finder-back{margin-left:22px;margin-right:22px}}
 @media(max-width:620px){.party-app{margin:0}.mode-chooser{padding:35px 0 55px}.chooser-intro{margin-bottom:30px}.chooser-intro h1{font-size:clamp(38px,10vw,51px)}.chooser-intro>p:not(.eyebrow){font-size:12px}.chooser-meta{gap:8px;flex-wrap:wrap;font-size:8px}.mode-cards{grid-template-columns:1fr;gap:14px}.mode-card{min-height:365px}.mode-card-content{padding:22px}.mode-card strong{font-size:37px}.mode-card small{font-size:11px}.mode-card-find .mode-card-visual img{width:100%;right:-5%;top:-7%}.create-party-panel{padding-top:34px}.create-party-card{padding:26px 20px}.create-preview-slots{grid-template-columns:repeat(3,1fr)}.create-preview-slots span{aspect-ratio:auto;min-height:50px}.finder-back{margin-top:20px}.login-dialog{padding:30px 22px 23px}}
-@media(prefers-reduced-motion:reduce){.mode-card,.mode-card-visual img,.mode-cta b{transition:none}.login-dialog{animation:none}}
+@media(prefers-reduced-motion:reduce){.mode-card,.mode-card-visual img,.mode-card-create::before,.mode-cta b{transition:none}.mode-card-create:hover::before{transform:none}.login-dialog{animation:none}}
 
 .create-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,.8fr);gap:20px;align-items:start}
 .create-layout .create-party-card{max-width:none;margin:0;padding:32px 36px;background:#1b191a}
@@ -181,8 +184,6 @@ body > header.header{position:relative}
 .roster-field{display:grid!important;gap:2px!important;color:#a99687!important;font-size:8px!important;letter-spacing:.04em!important}
 .roster-field span{display:block}
 .roster-field input{height:24px;padding:0 5px;font-size:10px}
-.create-party-card .roster-field input[type=number]{border:1px solid #4a3b37;box-shadow:none}
-.create-party-card .roster-field input[type=number]:focus{border-color:#d27c57}
 .roster-remove{align-self:center;width:22px;height:25px;padding:0;border:0;background:transparent;color:#ac8b7b;font:22px Arial;cursor:pointer}
 .roster-remove:hover{color:#f1c19c}
 .roster-count{margin:12px 0 0!important;color:#c59c7e!important;font:700 10px Manrope!important}
@@ -292,3 +293,216 @@ body > header.header{position:relative}
   .vacancy-row>.ts-wrapper{grid-column:2 / 4;grid-row:1}
 }
 @media(prefers-reduced-motion:reduce){.roster-row .ts-dropdown{animation:none}}
+
+/* Party Finder surface system. Keep the original site header and footer untouched. */
+.party-app{
+  --party-radius-xl:22px;
+  --party-radius-lg:16px;
+  --party-radius-md:11px;
+  --party-radius-sm:6px;
+}
+.party-app .mode-card,
+.party-app .create-party-card,
+.party-app .create-side,
+.party-app .created-preview,
+.party-app .identity-step,
+.party-app .how-card,
+.party-app .party-card,
+.party-app .empty-state,
+.party-app .login-dialog{
+  border-radius:var(--party-radius-xl);
+}
+.party-app .mode-card,
+.party-app .create-side,
+.party-app .how-card{overflow:hidden}
+.party-app .mode-card-content{border-radius:inherit}
+.party-app .server-option,
+.party-app .selected-character,
+.party-app .leader-row,
+.party-app .roster-row,
+.party-app .schedule-wrap,
+.party-app .create-schedule-wrap,
+.party-app .results-bar,
+.party-app .demo-credentials{
+  border-radius:var(--party-radius-lg);
+}
+.party-app .schedule-wrap,
+.party-app .create-schedule-wrap{overflow:hidden}
+.party-app .server-option.selected{box-shadow:inset 0 0 0 1px rgba(222,145,101,.28),0 10px 25px rgba(0,0,0,.24)}
+.party-app .selected-character-mark{border-radius:var(--party-radius-md)}
+.party-app .find-button,
+.party-app .join-btn,
+.party-app .roster-add,
+.party-app #editSearch,
+.party-app .flow-back{
+  border-radius:var(--party-radius-md);
+}
+.party-app .find-button,
+.party-app .join-btn,
+.party-app .roster-add,
+.party-app #editSearch,
+.party-app .flow-back,
+.party-app .server-option{transition:background-color .2s ease,border-color .2s ease,box-shadow .2s ease,transform .2s ease,color .2s ease}
+.party-app .find-button:hover,
+.party-app .join-btn:hover,
+.party-app .roster-add:hover:not(:disabled),
+.party-app #editSearch:hover{transform:translateY(-2px)}
+.party-app .create-party-card input,
+.party-app .create-party-card select,
+.party-app .find-character-label select,
+.party-app .login-form input,
+.party-app .create-party-card .roster-row .ts-wrapper.single .ts-control,
+.party-app .create-party-card .roster-row .member-name{
+  border-radius:var(--party-radius-md);
+}
+.party-app .create-party-card input::placeholder,
+.party-app .login-form input::placeholder,
+.party-app .roster-row .ts-control input::placeholder{
+  color:#96877f;
+  font-family:Manrope,Arial,sans-serif;
+  font-size:10px;
+  font-weight:500;
+  letter-spacing:0;
+  text-transform:none;
+  opacity:1;
+}
+.party-app .roster-row .ts-control input::placeholder{font-size:10px}
+.party-app .roster-row .roster-field input::placeholder,
+.party-app .roster-row .member-name::placeholder{font-size:9px}
+.party-app .roster-row .ts-dropdown{border-radius:var(--party-radius-md)}
+.party-app .roster-row .ts-dropdown .option,
+.party-app .roster-row .ts-dropdown .no-results{border-radius:8px}
+.party-app .created-preview-slots span{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  border-radius:9px;
+  font-size:9px;
+  line-height:1.35;
+}
+.party-app .slots .slot{border-radius:8px}
+.party-app .demo-credentials code{border-radius:var(--party-radius-sm)}
+@media(max-width:620px){
+  .party-app .mode-card,
+  .party-app .create-party-card,
+  .party-app .create-side,
+  .party-app .created-preview,
+  .party-app .identity-step,
+  .party-app .how-card,
+  .party-app .party-card,
+  .party-app .empty-state{border-radius:17px}
+  .party-app .created-preview-slots span{padding:8px 6px;font-size:8px}
+}
+@media(prefers-reduced-motion:reduce){
+  .party-app .find-button,
+  .party-app .join-btn,
+  .party-app .roster-add,
+  .party-app #editSearch,
+  .party-app .flow-back,
+  .party-app .server-option{transition:none}
+}
+
+/* Match the searchable character picker to the roster dropdown. */
+.party-app .find-character-label .ts-wrapper{min-width:0;width:100%;font-family:Manrope,Arial,sans-serif;text-transform:none;letter-spacing:0}
+.party-app .find-character-label .ts-wrapper.single .ts-control{min-height:44px;padding:11px 34px 10px 13px;border:1px solid #655047;border-radius:var(--party-radius-md);background:#211e1e;color:#f3e7dc;box-shadow:none;font:600 12px Manrope;transition:border-color .2s,background .2s,box-shadow .2s}
+.party-app .find-character-label .ts-wrapper.single.focus .ts-control,.party-app .find-character-label .ts-wrapper.single.dropdown-active .ts-control{border-color:#d58b62;background:#29211f;box-shadow:0 0 0 3px rgba(207,112,76,.13)}
+.party-app .find-character-label .ts-control input{min-width:1px;height:auto;min-height:20px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:#f3e7dc;box-shadow:none;font:600 12px Manrope;letter-spacing:0;text-transform:none}
+.party-app .find-character-label .ts-control input::placeholder{color:#96877f;font:500 11px Manrope;letter-spacing:0;text-transform:none;opacity:1}
+.party-app .find-character-label .ts-control input:focus{border:0;outline:0}
+.party-app .find-character-label .ts-wrapper.single .ts-control:after{right:13px;border-top-color:#cc9674}
+.party-app .find-character-label .ts-wrapper.single.dropdown-active .ts-control:after{border-bottom-color:#cc9674}
+.party-app .find-character-label .ts-dropdown{z-index:30;margin-top:5px;padding:5px;border:1px solid #795242;border-radius:var(--party-radius-md);background:#211b1b;color:#e9d9c9;box-shadow:0 18px 38px rgba(0,0,0,.48);font:600 11px Manrope;animation:rosterDropIn .17s ease-out}
+.party-app .find-character-label .ts-dropdown .option,.party-app .find-character-label .ts-dropdown .no-results{margin:1px 0;padding:9px 10px;border-radius:8px;color:#d5c5b6}
+.party-app .find-character-label .ts-dropdown .option.active,.party-app .find-character-label .ts-dropdown .option:hover{background:#56382d;color:#fff}
+.party-app .find-character-label .ts-dropdown .option.selected{background:#453127;color:#f2ba8d}
+.party-app .find-character-label .ts-dropdown .no-results{color:#a99488;font-weight:500}
+.party-app .find-character-label .ts-dropdown [data-selectable] .highlight{background:rgba(220,143,95,.32);color:#fff;border-radius:2px}
+@media(prefers-reduced-motion:reduce){.party-app .find-character-label .ts-dropdown{animation:none}}
+
+/* Roster and vacancies share one aligned row grid. */
+.create-party-card .leader-row,
+.create-party-card .roster-row{
+  grid-template-columns:30px minmax(150px,1fr) minmax(180px,1fr) 24px;
+  gap:11px;
+  min-height:62px;
+  padding:9px 12px;
+}
+.create-party-card .leader-row{margin-bottom:8px}
+.create-party-card .leader-row strong{grid-column:3;min-width:0}
+.create-party-card .roster-row .ts-wrapper.single .ts-control{display:flex;align-items:center;box-sizing:border-box;min-height:40px;padding-top:0;padding-bottom:0;line-height:1.2}
+.create-party-card .roster-row .ts-wrapper.single .ts-control>.item{display:block;align-self:center;margin:0;padding:0;line-height:1.2}
+.create-party-card .create-form-grid select#leaderCharacter{box-sizing:border-box;height:44px;padding:0 34px 0 13px;line-height:1.2;font-family:Manrope,Arial,sans-serif;font-size:12px}
+.create-party-card .roster-row .member-name{height:40px}
+.roster-level-range{display:grid;align-content:center;gap:3px;min-width:0;min-height:42px}
+.roster-level-values{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#a99687;font:800 8px Manrope;letter-spacing:.06em}
+.roster-level-values strong{display:flex;align-items:center;gap:5px;color:#e6c2a6;font:700 10px Manrope;letter-spacing:0}
+.roster-level-values output{min-width:18px;text-align:center}
+.roster-level-values i{color:#927d70;font-style:normal}
+.roster-level-track{position:relative;height:18px;display:flex;align-items:center;touch-action:none}
+.roster-level-track::before{position:absolute;inset:7px 0 7px;content:"";border:1px solid #57443c;border-radius:99px;background:#151416}
+.roster-level-fill{position:absolute;z-index:1;left:0;top:7px;height:4px;border-radius:99px;background:linear-gradient(90deg,#a14b3f,#dd8e62);pointer-events:none}
+.roster-level-track input[type=range]{position:absolute;z-index:2;inset:0;width:100%;height:18px;margin:0;padding:0;border:0;background:transparent;appearance:none;-webkit-appearance:none;pointer-events:none;outline:0}
+.roster-level-track input[type=range]::-webkit-slider-runnable-track{height:4px;background:transparent}
+.roster-level-track input[type=range]::-moz-range-track{height:4px;background:transparent}
+.roster-level-track input[type=range]::-webkit-slider-thumb{width:13px;height:13px;border:2px solid #f0bb91;border-radius:50%;background:#472c26;box-shadow:0 0 0 2px #211b1a;appearance:none;-webkit-appearance:none;pointer-events:auto;cursor:ew-resize}
+.roster-level-track input[type=range]::-moz-range-thumb{width:10px;height:10px;border:2px solid #f0bb91;border-radius:50%;background:#472c26;box-shadow:0 0 0 2px #211b1a;pointer-events:auto;cursor:ew-resize}
+.roster-level-track input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px rgba(240,187,145,.3)}
+.roster-level-track input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 3px rgba(240,187,145,.3)}
+.create-layout .create-side{position:sticky;top:24px;align-self:start}
+.roster-section-add{display:flex;justify-content:center;margin:8px 0 3px}
+.roster-add-end{display:grid;place-items:center;width:31px;height:31px;padding:0;border:1px solid #76513e;border-radius:50%;background:#211a19;color:#dfa176;font:400 21px/1 Manrope;cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease}
+.roster-add-end:hover:not(:disabled){transform:translateY(-1px);border-color:#d88759;background:#37231e;box-shadow:0 0 0 3px rgba(208,125,84,.1)}
+.roster-add-end:disabled{opacity:.36;cursor:not-allowed}
+.roster-count{text-align:center}
+@media(max-width:620px){
+  .create-party-card .leader-row,
+  .create-party-card .roster-row{
+    grid-template-columns:22px minmax(0,1fr) 22px;
+    grid-template-rows:auto auto;
+    gap:7px 8px;
+    min-height:0;
+    padding:9px;
+  }
+  .create-party-card .leader-row .create-slot-number,
+  .create-party-card .roster-row .create-slot-number{grid-column:1;grid-row:1;align-self:center}
+  .create-party-card .leader-row>span:nth-child(2){grid-column:2;grid-row:1}
+  .create-party-card .leader-row strong{grid-column:2;grid-row:2}
+  .create-party-card .roster-row>.ts-wrapper{grid-column:2;grid-row:1}
+  .create-party-card .roster-row>.member-name,
+  .create-party-card .roster-row>.roster-level-range{grid-column:2;grid-row:2}
+  .create-party-card .roster-row>.roster-remove{grid-column:3;grid-row:1}
+  .roster-level-range{min-height:42px}
+}
+@media(max-width:900px){
+  .create-layout .create-side{position:relative;top:auto}
+}
+@media(prefers-reduced-motion:reduce){.roster-add-end{transition:none}}
+
+/* Keep the leader character field on the create page aligned like the finder field. */
+.party-app .find-character-label .ts-wrapper,
+.party-app .create-form-grid .ts-wrapper{display:block;min-width:0;width:100%;font-family:Manrope,Arial,sans-serif;text-transform:none;letter-spacing:0}
+.party-app .find-character-label .ts-wrapper.single .ts-control,
+.party-app .create-form-grid .ts-wrapper.single .ts-control{display:flex;align-items:center;box-sizing:border-box}
+.party-app .create-form-grid .ts-wrapper.single .ts-control{min-height:44px;padding:11px 34px 10px 13px;border:1px solid #655047;border-radius:var(--party-radius-md);background:#211e1e;color:#f3e7dc;box-shadow:none;font:600 12px Manrope;transition:border-color .2s,background .2s,box-shadow .2s}
+.party-app .create-form-grid .ts-wrapper.single .ts-control>.item{display:block;align-self:center;margin:0;padding:0;line-height:1.2}
+.party-app .create-form-grid .ts-wrapper.single.focus .ts-control,
+.party-app .create-form-grid .ts-wrapper.single.dropdown-active .ts-control{border-color:#d58b62;background:#29211f;box-shadow:0 0 0 3px rgba(207,112,76,.13)}
+.party-app .create-form-grid .ts-control input{min-width:1px;height:auto;min-height:20px;margin:0;padding:0;border:0;border-radius:0;background:transparent;color:#f3e7dc;box-shadow:none;font:600 12px Manrope;letter-spacing:0;text-transform:none}
+.party-app .create-form-grid .ts-control input::placeholder{color:#96877f;font:500 11px Manrope;letter-spacing:0;text-transform:none;opacity:1}
+.party-app .create-form-grid .ts-control input:focus{border:0;outline:0}
+.party-app .create-form-grid .ts-wrapper.single .ts-control:after{right:13px;border-top-color:#cc9674}
+.party-app .create-form-grid .ts-wrapper.single.dropdown-active .ts-control:after{border-bottom-color:#cc9674}
+.party-app .create-form-grid .ts-dropdown{z-index:30;margin-top:5px;padding:5px;border:1px solid #795242;border-radius:var(--party-radius-md);background:#211b1b;color:#e9d9c9;box-shadow:0 18px 38px rgba(0,0,0,.48);font:600 11px Manrope;animation:rosterDropIn .17s ease-out}
+.party-app .create-form-grid .ts-dropdown .option,
+.party-app .create-form-grid .ts-dropdown .no-results{margin:1px 0;padding:9px 10px;border-radius:8px;color:#d5c5b6}
+.party-app .create-form-grid .ts-dropdown .option.active,
+.party-app .create-form-grid .ts-dropdown .option:hover{background:#56382d;color:#fff}
+.party-app .create-form-grid .ts-dropdown .option.selected{background:#453127;color:#f2ba8d}
+.party-app .create-form-grid .ts-dropdown .no-results{color:#a99488;font-weight:500}
+@media(prefers-reduced-motion:reduce){.party-app .create-form-grid .ts-dropdown{animation:none}}
+
+/* Local-time schedule summaries should wrap without pushing the action out of the party card. */
+.party-app .party-bottom{gap:12px}
+.party-app .party-bottom>span{min-width:0;line-height:1.55}
+.party-app .party-bottom .join-btn{flex:0 0 auto}

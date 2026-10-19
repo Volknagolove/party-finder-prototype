@@ -9,12 +9,16 @@ const loginForm = document.querySelector('#loginForm');
 const loginEmail = document.querySelector('#loginEmail');
 const loginPassword = document.querySelector('#loginPassword');
 const loginError = document.querySelector('#loginError');
+const demoLogout = document.querySelector('#demoLogout');
 const finderSections = [...document.querySelectorAll('#finder, .party-app > .workspace, #how-it-works')];
 const authKey = 'partyFinder.demoSession.v3';
 const demoEmail = 'demo@party.local';
 const demoPassword = 'Party2026!';
 let pendingMode = null;
 let lastModeTrigger = null;
+function currentAccess() { return sessionStorage.getItem(authKey); }
+function isGuest() { return currentAccess() === 'guest'; }
+function hasLocalAccess() { return ['demo', 'guest'].includes(currentAccess()); }
 
 function updateModeUrl(mode) {
   const url = new URL(window.location.href);
@@ -33,6 +37,8 @@ function closeLogin() {
 
 function showModeChooser(updateUrl = true) {
   closeLogin();
+  demoLogout.hidden = !hasLocalAccess();
+  demoLogout.textContent = isGuest() ? 'ВЫЙТИ ИЗ ГОСТЕВОГО РЕЖИМА' : 'ВЫЙТИ ИЗ ТЕСТОВОГО АККАУНТА';
   partyApp.classList.remove('mode-find', 'mode-create');
   partyApp.classList.add('mode-select');
   modeChooser.hidden = false;
@@ -55,12 +61,13 @@ function showSelectedMode(mode, updateUrl = true) {
   });
   if (updateUrl) updateModeUrl(mode);
   window.scrollTo(0, 0);
+  document.dispatchEvent(new CustomEvent('partyfinder:mode-changed', {detail:{mode}}));
 }
 
 function selectMode(mode, trigger) {
   lastModeTrigger = trigger;
   pendingMode = mode;
-  if (sessionStorage.getItem(authKey) === 'demo') {
+  if (hasLocalAccess()) {
     showSelectedMode(mode);
     return;
   }
@@ -76,6 +83,11 @@ document.querySelector('#findMode').addEventListener('click', event => selectMod
 document.querySelector('#createMode').addEventListener('click', event => selectMode('create', event.currentTarget));
 document.querySelector('#backToModes').addEventListener('click', () => showModeChooser());
 document.querySelector('#finderBack').addEventListener('click', () => showModeChooser());
+demoLogout.addEventListener('click', () => {
+  sessionStorage.removeItem(authKey);
+  showModeChooser();
+  window.location.reload();
+});
 document.querySelector('#loginClose').addEventListener('click', closeLogin);
 document.querySelector('#loginBackdrop').addEventListener('click', closeLogin);
 document.querySelector('#fillDemoLogin').addEventListener('click', () => {
@@ -96,9 +108,15 @@ loginForm.addEventListener('submit', event => {
   }
   sessionStorage.setItem(authKey, 'demo');
   showSelectedMode(pendingMode || 'find');
+  window.location.reload();
+});
+document.querySelector('#continueAsGuest').addEventListener('click', () => {
+  sessionStorage.setItem(authKey, 'guest');
+  showSelectedMode(pendingMode || 'find');
+  window.location.reload();
 });
 const initialMode = new URL(window.location.href).searchParams.get('mode');
-if (sessionStorage.getItem(authKey) === 'demo' && ['find', 'create'].includes(initialMode)) {
+if (hasLocalAccess() && ['find', 'create'].includes(initialMode)) {
   showSelectedMode(initialMode, false);
 } else {
   showModeChooser(false);
@@ -106,11 +124,93 @@ if (sessionStorage.getItem(authKey) === 'demo' && ['find', 'create'].includes(in
 }
 window.addEventListener('popstate', () => {
   const mode = new URL(window.location.href).searchParams.get('mode');
-  if (sessionStorage.getItem(authKey) === 'demo' && ['find', 'create'].includes(mode)) showSelectedMode(mode, false);
+  if (hasLocalAccess() && ['find', 'create'].includes(mode)) showSelectedMode(mode, false);
   else showModeChooser(false);
 });
 
 const createDayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const demoScheduleTimeZone = 'Europe/Madrid';
+const userTimeZone = (() => {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; }
+  catch { return 'UTC'; }
+})();
+const zonedPartsFormatters = new Map();
+function zonedParts(date, timeZone) {
+  if (!zonedPartsFormatters.has(timeZone)) {
+    zonedPartsFormatters.set(timeZone, new Intl.DateTimeFormat('en-GB', {
+      timeZone, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'
+    }));
+  }
+  return Object.fromEntries(zonedPartsFormatters.get(timeZone).formatToParts(date).map(part => [part.type, part.value]));
+}
+function timeZoneDisplayLabel(timeZone) {
+  return `${timeZone} · местное время`;
+}
+function zonedWallTimeToDate(year, month, day, hour, timeZone) {
+  const wanted = Date.UTC(year, month - 1, day, hour);
+  let timestamp = wanted;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const parts = zonedParts(new Date(timestamp), timeZone);
+    const observed = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute));
+    const adjustment = wanted - observed;
+    timestamp += adjustment;
+    if (!adjustment) break;
+  }
+  return new Date(timestamp);
+}
+function localWeekStartDate() {
+  const now = zonedParts(new Date(), userTimeZone);
+  const date = new Date(Date.UTC(Number(now.year), Number(now.month) - 1, Number(now.day)));
+  const weekday = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - weekday);
+  return {year:date.getUTCFullYear(), month:date.getUTCMonth() + 1, day:date.getUTCDate(), timestamp:date.getTime()};
+}
+function partyLocalSlots(party) {
+  const monday = localWeekStartDate();
+  const slots = new Set();
+  for (let sourceDay = 0; sourceDay < 7; sourceDay++) {
+    const sourceDate = new Date(Date.UTC(monday.year, monday.month - 1, monday.day + sourceDay));
+    for (const hour of party.hours) {
+      const instant = zonedWallTimeToDate(sourceDate.getUTCFullYear(), sourceDate.getUTCMonth() + 1, sourceDate.getUTCDate(), hour, party.timeZone || demoScheduleTimeZone);
+      const local = zonedParts(instant, userTimeZone);
+      const localDate = Date.UTC(Number(local.year), Number(local.month) - 1, Number(local.day));
+      const dayIndex = ((Math.round((localDate - monday.timestamp) / 86400000) % 7) + 7) % 7;
+      slots.add(`${dayIndex}:${Number(local.hour)}`);
+    }
+  }
+  return slots;
+}
+function describeWeeklySlots(slots) {
+  const byDay = Array.from({length:7}, () => new Set());
+  slots.forEach(key => { const [day, hour] = key.split(':').map(Number); byDay[day]?.add(hour); });
+  const groups = new Map();
+  byDay.forEach((set, day) => {
+    if (!set.size) return;
+    const ordered = [...set].sort((a,b) => a-b);
+    const ranges = [];
+    let start = ordered[0], end = start;
+    ordered.slice(1).forEach(hour => {
+      if (hour === end + 1) end = hour;
+      else { ranges.push(`${String(start).padStart(2,'0')}:00–${String((end + 1) % 24).padStart(2,'0')}:00`); start = end = hour; }
+    });
+    ranges.push(`${String(start).padStart(2,'0')}:00–${String((end + 1) % 24).padStart(2,'0')}:00`);
+    const key = ranges.join(', ');
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(day);
+  });
+  return [...groups].map(([hours, days]) => {
+    const ranges = [];
+    let start = days[0], end = start;
+    days.slice(1).forEach(day => {
+      if (day === end + 1) end = day;
+      else { ranges.push(start === end ? dayNames[start] : `${dayNames[start]}–${dayNames[end]}`); start = end = day; }
+    });
+    ranges.push(start === end ? dayNames[start] : `${dayNames[start]}–${dayNames[end]}`);
+    return `${ranges.join(', ')} ${hours}`;
+  });
+}
+document.querySelectorAll('[data-user-time-zone]').forEach(element => { element.textContent = timeZoneDisplayLabel(userTimeZone); });
 const classCards = [...document.querySelectorAll('.class-card')];
 const classNames = classCards.map(card => card.dataset.class);
 const classCodeByName = new Map(classCards.map(card => [card.dataset.class, card.dataset.short]));
@@ -122,6 +222,13 @@ const servers = [
 let selectedServerId = '';
 const leaderCharacterSelect = document.querySelector('#leaderCharacter');
 const findCharacterSelect = document.querySelector('#findCharacter');
+function guestCharacter(prefix) {
+  const name = document.querySelector(`#${prefix}GuestName`).value.trim();
+  const className = document.querySelector(`#${prefix}GuestClass`).value;
+  const level = Number(document.querySelector(`#${prefix}GuestLevel`).value);
+  if (!selectedServerId || !name || !className || !Number.isInteger(level) || level < 1 || level > 80) return null;
+  return {id:`guest:${selectedServerId}:${name.toLowerCase()}:${className}`, serverId:selectedServerId, name, className, level};
+}
 // Demo account data. Replace this source with the authenticated profile API later.
 const demoCharacters = [
   {id:'char-101', serverId:'bartz', name:'Kain', className:'Warcryer', level:78},
@@ -141,8 +248,16 @@ const demoCharacters = [
   {id:'char-305', serverId:'erica', name:'Morrin', className:'Phantom Summoner', level:73}
 ];
 const charactersById = new Map(demoCharacters.map(character => [character.id, character]));
-function selectedLeaderCharacter() { return charactersById.get(leaderCharacterSelect.value); }
-function selectedFindCharacter() { return charactersById.get(findCharacterSelect.value); }
+function selectedLeaderCharacter() { return isGuest() ? guestCharacter('leader') : charactersById.get(leaderCharacterSelect.value); }
+function selectedFindCharacter() { return isGuest() ? guestCharacter('find') : charactersById.get(findCharacterSelect.value); }
+function focusGuestCharacter(prefix) {
+  for (const suffix of ['Name', 'Class', 'Level']) {
+    const field = document.querySelector(`#${prefix}Guest${suffix}`);
+    if (field.value.trim() && (suffix !== 'Level' || (Number.isInteger(Number(field.value)) && Number(field.value) >= 1 && Number(field.value) <= 80))) continue;
+    (field.tomselect?.control_input || field).focus();
+    return;
+  }
+}
 const memberList = document.querySelector('#memberList');
 const vacancyList = document.querySelector('#vacancyList');
 const rosterCount = document.querySelector('#rosterCount');
@@ -153,11 +268,30 @@ function vacanciesWord(count) {
   return 'вакансий';
 }
 function populateCharacterSelect(select) {
+  if (select.tomselect) select.tomselect.destroy();
   select.replaceChildren(new Option(selectedServerId ? 'Выбери персонажа' : 'Сначала выбери сервер', ''));
   select.disabled = !selectedServerId;
   demoCharacters.filter(character => character.serverId === selectedServerId).forEach(character => {
     select.add(new Option(`${character.name} · ${character.className} · ${character.level} ур.`, character.id));
   });
+  if (selectedServerId) {
+    const searchable = select === findCharacterSelect;
+    new TomSelect(select, {
+      create: false,
+      maxItems: 1,
+      maxOptions: demoCharacters.length,
+      closeAfterSelect: true,
+      onItemAdd() { requestAnimationFrame(() => this.blur()); },
+      searchField: searchable ? ['text'] : [],
+      controlInput: searchable
+        ? '<input type="text" autocomplete="off" size="1" />'
+        : '<input type="text" autocomplete="off" size="1" readonly tabindex="-1" />',
+      placeholder: searchable ? 'Введи имя или выбери персонажа' : 'Выбери персонажа',
+      render: {
+        no_results: (data, escape) => `<div class="no-results">Персонаж «${escape(data.input)}» не найден</div>`
+      }
+    });
+  }
   select.dispatchEvent(new Event('change'));
 }
 function chooseServer(serverId) {
@@ -169,6 +303,8 @@ function chooseServer(serverId) {
   });
   populateCharacterSelect(leaderCharacterSelect);
   populateCharacterSelect(findCharacterSelect);
+  updateLeaderCharacter();
+  updateFindCharacter();
   document.querySelector('#results').hidden = true;
   document.querySelector('#createdPreview').hidden = true;
 }
@@ -184,20 +320,21 @@ for (const container of document.querySelectorAll('.server-options')) {
     container.appendChild(button);
   });
 }
-leaderCharacterSelect.addEventListener('change', () => {
+function updateLeaderCharacter() {
   const character = selectedLeaderCharacter();
   const details = document.querySelector('#selectedCharacter');
   details.hidden = !character;
   document.querySelector('#leaderCharacterDisplay').textContent = character
     ? `${character.name} · ${character.className}`
-    : 'Персонаж не выбран';
+    : isGuest() ? 'Укажи имя, класс и уровень' : 'Персонаж не выбран';
   if (!character) return;
   document.querySelector('#characterServer').textContent = `ПЕРСОНАЖ · ${servers.find(server => server.id === character.serverId).name.toUpperCase()}`;
   document.querySelector('#characterMark').textContent = character.name[0];
   document.querySelector('#characterName').textContent = character.name;
   document.querySelector('#characterClass').textContent = character.className;
   document.querySelector('#characterLevel').textContent = character.level;
-});
+}
+leaderCharacterSelect.addEventListener('change', updateLeaderCharacter);
 
 function classSelect(label, anyAllowed = false) {
   const select = document.createElement('select');
@@ -209,16 +346,46 @@ function classSelect(label, anyAllowed = false) {
   return select;
 }
 function enhanceClassSelect(select) {
+  const guestClass = select.id.endsWith('GuestClass');
   new TomSelect(select, {
     create: false,
     maxItems: 1,
     maxOptions: classNames.length + 1,
+    closeAfterSelect: guestClass,
+    ...(guestClass ? {onItemAdd() { requestAnimationFrame(() => this.blur()); }} : {}),
     searchField: ['text'],
     placeholder: select.dataset.anyAllowed === 'true' ? 'Любой класс · введи для поиска' : 'Введи или выбери класс',
     render: {
       no_results: (data, escape) => `<div class="no-results">Класс «${escape(data.input)}» не найден</div>`
     }
   });
+}
+for (const prefix of ['leader', 'find']) {
+  const select = document.querySelector(`#${prefix}GuestClass`);
+  classNames.forEach(name => select.add(new Option(name, name)));
+  enhanceClassSelect(select);
+  for (const suffix of ['Name', 'Class', 'Level']) {
+    const field = document.querySelector(`#${prefix}Guest${suffix}`);
+    field.addEventListener(suffix === 'Class' ? 'change' : 'input', () => {
+      if (prefix === 'leader') updateLeaderCharacter();
+      else updateFindCharacter();
+    });
+  }
+}
+function syncAccessFields() {
+  const guest = isGuest();
+  partyApp.classList.toggle('guest-mode', guest);
+  for (const prefix of ['leader', 'find']) {
+    document.querySelector(`#${prefix}ProfileField`).hidden = guest;
+    document.querySelector(`#${prefix}GuestFields`).hidden = !guest;
+    document.querySelector(`#${prefix}ProfileHelp`).hidden = guest;
+  }
+  leaderCharacterSelect.required = !guest;
+  document.querySelector('.hero-text').textContent = guest
+    ? 'Выбери сервер, укажи класс и уровень вручную, отметь время игры — мы покажем подходящие группы.'
+    : 'Выбери сервер и своего персонажа, отметь время игры — мы покажем группы, которым не хватает именно тебя.';
+  updateLeaderCharacter();
+  updateFindCharacter();
 }
 function rosterInput(label, type, placeholder, min, max) {
   const input = document.createElement('input');
@@ -237,11 +404,15 @@ function labeledRosterInput(label, input) {
   return wrapper;
 }
 function updateRoster() {
-  const members = memberList.children.length;
+  const memberRows = [...memberList.children];
+  const members = memberRows.filter(row => row.querySelector('.roster-class-select').value || row.querySelector('.member-name').value.trim()).length;
   const vacancies = vacancyList.children.length;
   const remaining = 8 - members - vacancies;
-  document.querySelector('#addMember').disabled = remaining <= 0;
-  document.querySelector('#addVacancy').disabled = remaining <= 0;
+  const allocatedRows = memberRows.length + vacancies;
+  document.querySelector('#addMember').disabled = allocatedRows >= 8;
+  document.querySelector('#addMemberAtEnd').disabled = allocatedRows >= 8;
+  document.querySelector('#addVacancy').disabled = allocatedRows >= 8;
+  document.querySelector('#addVacancyAtEnd').disabled = allocatedRows >= 8;
   document.querySelector('#openSlotCount').textContent = vacancies;
   document.querySelector('#openSlotLabel').textContent = `${vacanciesWord(vacancies)} для набора`;
   rosterCount.textContent = `В пати ${members + 1} / 9 · ищем ${vacancies} · ещё не распределено ${remaining}`;
@@ -262,6 +433,8 @@ function addMember() {
   row.append(number, select, name, remove);
   memberList.appendChild(row);
   enhanceClassSelect(select);
+  select.addEventListener('change', updateRoster);
+  name.addEventListener('input', updateRoster);
   updateRoster();
 }
 function addVacancy() {
@@ -270,18 +443,45 @@ function addVacancy() {
   row.className = 'roster-row vacancy-row';
   const number = document.createElement('span'); number.className = 'create-slot-number';
   const select = classSelect('Кого ищем: класс', true);
-  const min = rosterInput('Минимальный уровень', 'number', 'Мин. ур.', 1, 80); min.value = '1'; min.required = true;
-  const max = rosterInput('Максимальный уровень', 'number', 'Макс. ур.', 1, 80); max.value = '80'; max.required = true;
-  for (const input of [min, max]) input.addEventListener('input', () => max.setCustomValidity(''));
+  const range = document.createElement('div'); range.className = 'roster-level-range';
+  const values = document.createElement('div'); values.className = 'roster-level-values';
+  const caption = document.createElement('span'); caption.textContent = 'УРОВЕНЬ';
+  const readout = document.createElement('strong');
+  const minValue = document.createElement('output'); minValue.className = 'level-min-value'; minValue.textContent = '1';
+  const separator = document.createElement('i'); separator.textContent = '–';
+  const maxValue = document.createElement('output'); maxValue.className = 'level-max-value'; maxValue.textContent = '80';
+  readout.append(minValue, separator, maxValue); values.append(caption, readout);
+  const track = document.createElement('div'); track.className = 'roster-level-track';
+  const fill = document.createElement('span'); fill.className = 'roster-level-fill';
+  const min = rosterInput('Минимальный уровень', 'range', '', 1, 80); min.className = 'level-range-input level-min'; min.value = '1'; min.step = '1';
+  const max = rosterInput('Максимальный уровень', 'range', '', 1, 80); max.className = 'level-range-input level-max'; max.value = '80'; max.step = '1';
+  const updateRange = changed => {
+    if (Number(min.value) > Number(max.value)) {
+      if (changed === min) max.value = min.value;
+      else min.value = max.value;
+    }
+    minValue.value = minValue.textContent = min.value;
+    maxValue.value = maxValue.textContent = max.value;
+    const left = ((Number(min.value) - 1) / 79) * 100;
+    const right = ((Number(max.value) - 1) / 79) * 100;
+    fill.style.left = `${left}%`;
+    fill.style.width = `${right - left}%`;
+  };
+  min.addEventListener('input', () => updateRange(min));
+  max.addEventListener('input', () => updateRange(max));
+  track.append(fill, min, max); range.append(values, track); updateRange();
   const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'roster-remove'; remove.setAttribute('aria-label', 'Убрать вакансию'); remove.textContent = '×';
   remove.addEventListener('click', () => { select.tomselect?.destroy(); row.remove(); updateRoster(); });
-  row.append(number, select, labeledRosterInput('МИН.', min), labeledRosterInput('МАКС.', max), remove);
+  row.append(number, select, range, remove);
   vacancyList.appendChild(row);
   enhanceClassSelect(select);
   updateRoster();
 }
 document.querySelector('#addMember').addEventListener('click', addMember);
+document.querySelector('#addMemberAtEnd').addEventListener('click', addMember);
 document.querySelector('#addVacancy').addEventListener('click', addVacancy);
+document.querySelector('#addVacancyAtEnd').addEventListener('click', addVacancy);
+addMember();
 addVacancy();
 
 const createAvailability = createDayNames.map(() => new Set([19, 20, 21]));
@@ -377,7 +577,21 @@ document.querySelector('#createPartyForm').addEventListener('submit', event => {
   event.preventDefault();
   if (!selectedServerId) { document.querySelector('#createServerOptions .server-option').focus(); return; }
   const leader = selectedLeaderCharacter();
-  if (!leader) { leaderCharacterSelect.focus(); return; }
+  if (!leader) { if (isGuest()) focusGuestCharacter('leader'); else (leaderCharacterSelect.tomselect?.control_input || leaderCharacterSelect).focus(); return; }
+  const leaderTelegram = document.querySelector('#leaderTelegram');
+  const leaderDiscord = document.querySelector('#leaderDiscord');
+  const leaderContactError = document.querySelector('#leaderContactError');
+  if (!leaderTelegram.value.trim() && !leaderDiscord.value.trim()) {
+    leaderContactError.hidden = false;
+    leaderTelegram.setAttribute('aria-invalid', 'true');
+    leaderDiscord.setAttribute('aria-invalid', 'true');
+    leaderTelegram.focus();
+    leaderContactError.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  leaderContactError.hidden = true;
+  leaderTelegram.removeAttribute('aria-invalid');
+  leaderDiscord.removeAttribute('aria-invalid');
   const selectedHours = createAvailability.reduce((total, set) => total + set.size, 0);
   if (!selectedHours) {
     createFormError.textContent = 'Отметь хотя бы один час игры в недельной сетке.';
@@ -392,6 +606,7 @@ document.querySelector('#createPartyForm').addEventListener('submit', event => {
     return;
   }
   for (const row of memberList.children) {
+    if (!row.querySelector('select').value && !row.querySelector('.member-name').value.trim()) continue;
     if (row.querySelector('select').value) continue;
     createFormError.textContent = 'Выбери класс для каждого игрока, который уже в пати.';
     createFormError.hidden = false;
@@ -399,9 +614,9 @@ document.querySelector('#createPartyForm').addEventListener('submit', event => {
     return;
   }
   for (const row of vacancyList.children) {
-    const [min, max] = row.querySelectorAll('input[type=number]');
-    max.setCustomValidity(Number(max.value) < Number(min.value) ? 'Максимальный уровень должен быть не меньше минимального.' : '');
-    if (!max.reportValidity()) return;
+    const min = row.querySelector('.level-min');
+    const max = row.querySelector('.level-max');
+    if (Number(max.value) < Number(min.value)) { max.focus(); return; }
   }
   createFormError.hidden = true;
   const preview = document.querySelector('#createdPreview');
@@ -412,14 +627,15 @@ document.querySelector('#createPartyForm').addEventListener('submit', event => {
   const title = document.createElement('h3');
   title.textContent = document.querySelector('#partyName').value.trim();
   const summary = document.createElement('p');
-  summary.textContent = `${servers.find(server => server.id === selectedServerId).name} · ${memberList.children.length + 1} в пати · ${vacancyList.children.length} ${vacanciesWord(vacancyList.children.length)} · ${selectedHours} ч/нед. · лидер: ${leader.name} (${leader.className})`;
-  const schedule = document.createElement('p'); schedule.className = 'created-preview-schedule'; schedule.textContent = describeCreateSchedule().join(' · ');
+  const activeMemberRows = [...memberList.children].filter(row => row.querySelector('.roster-class-select').value || row.querySelector('.member-name').value.trim());
+  summary.textContent = `${servers.find(server => server.id === selectedServerId).name} · ${activeMemberRows.length + 1} в пати · ${vacancyList.children.length} ${vacanciesWord(vacancyList.children.length)} · ${selectedHours} ч/нед. · лидер: ${leader.name} (${leader.className})`;
+  const schedule = document.createElement('p'); schedule.className = 'created-preview-schedule'; schedule.textContent = `${describeCreateSchedule().join(' · ')} · ${timeZoneDisplayLabel(userTimeZone)}`;
   const slots = document.createElement('div');
   slots.className = 'created-preview-slots';
   const slotNames = [
     {label: `Ты · ${leader.name} · ${leader.className}`, kind:'occupied'},
-    ...[...memberList.children].map(row => { const name = row.querySelector('.member-name'); return {label:`${row.querySelector('select').value}${name.value.trim() ? ` · ${name.value.trim()}` : ''}`, kind:'occupied'}; }),
-    ...[...vacancyList.children].map(row => { const [min, max] = row.querySelectorAll('input[type=number]'); return {label:`${row.querySelector('select').value || 'Любой класс'} · ${min.value}–${max.value} ур.`, kind:'open'}; })
+    ...activeMemberRows.map(row => { const name = row.querySelector('.member-name'); return {label:`${row.querySelector('select').value}${name.value.trim() ? ` · ${name.value.trim()}` : ''}`, kind:'occupied'}; }),
+    ...[...vacancyList.children].map(row => { const min = row.querySelector('.level-min'); const max = row.querySelector('.level-max'); return {label:`${row.querySelector('select').value || 'Любой класс'} · ${min.value}–${max.value} ур.`, kind:'open'}; })
   ];
   while (slotNames.length < 9) slotNames.push({label:'Не распределено', kind:'empty'});
   slotNames.forEach((entry, index) => {
@@ -429,14 +645,14 @@ document.querySelector('#createPartyForm').addEventListener('submit', event => {
     slots.appendChild(slot);
   });
   const note = document.createElement('small');
-  note.textContent = 'Макет сохранён только на этой странице. Для публикации потребуется серверная часть.';
+  note.textContent = 'Объявление и вакансии сохранены в этом браузере. Для публикации на сайте потребуется серверная часть.';
   preview.append(eyebrow, title, summary, schedule, slots, note);
   preview.hidden = false;
+  document.dispatchEvent(new Event('partyfinder:preview'));
   preview.scrollIntoView({behavior:'smooth', block:'start'});
 });
 
 const days = ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
-const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
 const hours = Array.from({length:24}, (_, i) => i);
 let selectedClass = '';
 let selectedCode = '';
@@ -486,7 +702,7 @@ window.addEventListener('pointercancel', () => { isDragging = false; dragAnchor 
 function updateHourCount(){ document.querySelector('#selectedHours').textContent = availability.reduce((sum, set) => sum + set.size, 0); }
 updateHourCount();
 
-findCharacterSelect.addEventListener('change', () => {
+function updateFindCharacter() {
   const character = selectedFindCharacter();
   selectedClass = character?.className || '';
   selectedCode = classCodeByName.get(selectedClass) || '';
@@ -499,7 +715,9 @@ findCharacterSelect.addEventListener('change', () => {
     document.querySelector('#findCharacterLevel').textContent = character.level;
   }
   document.querySelector('#results').hidden = true;
-});
+}
+findCharacterSelect.addEventListener('change', updateFindCharacter);
+syncAccessFields();
 
 const partyFixtures = [
   {name:'Night Watch', tag:'Ищут игрока 7 / 9', leader:'Kain', hours:[19,20,21], open:['TH','Glad'], roles:[['SK','Танк'],['PP','Бафф'],['BP','Хил'],['Glad','Дамаг'],['TH','Даггер'],['OL','Бафф'],['WL','Контроль']]},
@@ -525,23 +743,27 @@ const partyFixtures = [
   {name:'Summon Circle', tag:'Ищут игроков 6 / 9', leader:'Mewtwo', hours:[18,19,20,21], open:['Cat','ES','PS'], roles:[['SK','Танк'],['BP','Хил'],['SE','Бафф'],['Cat','Открыто'],['ES','Открыто'],['PS','Открыто'],['OL','Бафф'],['BD','Танцы']]},
 ];
 // Independent demo listings per server; replace with server-filtered API results later.
-const parties = servers.flatMap(server => partyFixtures.map(party => ({...party, serverId:server.id})));
-function userTimes(){ return new Set(availability.flatMap(set => [...set])); }
-function overlapHours(party){ return party.hours.filter(hour => userTimes().has(hour)); }
+const parties = servers.flatMap(server => partyFixtures.map((party, index) => ({...party, authStatus:index % 5 === 1 ? 'guest' : 'profile', timeZone:party.timeZone || demoScheduleTimeZone, serverId:server.id})));
+function userTimes(){ return new Set(availability.flatMap((set, day) => [...set].map(hour => `${day}:${hour}`))); }
+function overlapHours(party){ const user = userTimes(); return [...partyLocalSlots(party)].filter(slot => user.has(slot)); }
 function matchPercent(party){ const availableHours = Math.max(userTimes().size, 1); return Math.min(100, Math.round(overlapHours(party).length / availableHours * 100)); }
 function renderResults(){
   const code = selectedCode;
-  const matches = parties.filter(party => party.serverId === selectedServerId && party.open.includes(code) && party.hours.every(hour => userTimes().has(hour)));
+  const user = userTimes();
+  const matches = parties.filter(party => party.serverId === selectedServerId && party.open.includes(code) && [...partyLocalSlots(party)].every(slot => user.has(slot)));
   const container = document.querySelector('#partyResults');
   const serverName = servers.find(server => server.id === selectedServerId)?.name || '';
   document.querySelector('#resultSummary').textContent = matches.length ? `Найдено ${matches.length} ${matches.length === 1 ? 'подходящее пати' : 'подходящих пати'} · ${serverName} · ${selectedClass}` : `На ${serverName} для класса «${selectedClass || 'не выбран'}» пока нет полного совпадения`;
-  container.innerHTML = matches.length ? matches.map(party => { let claimed = false; const roles = [...party.roles, ['—','Ожидают']].slice(0,9); const slots = roles.map(([role,label]) => { const mine = !claimed && role === code; if (mine) claimed = true; const open = mine || label === 'Открыто'; return [role, mine ? 'твоё место' : label, open]; }); return `<article class="party-card"><span class="match-score">${matchPercent(party)}% MATCH</span><h3>${party.name}</h3><p class="party-sub">${party.tag} · лидер ${party.leader}</p><div class="slots">${slots.map(([role,label,open]) => `<div class="slot ${open ? 'open' : ''}">${role}<small>${label}</small></div>`).join('')}</div><div class="party-bottom"><span>◷ ${party.hours[0]}:00–${party.hours[party.hours.length-1]+1}:00 · ${party.hours.length} ч.</span><button class="join-btn" data-party="${party.name}">ОТКЛИКНУТЬСЯ →</button></div></article>`; }).join('') : `<div class="empty-state"><span>✦</span><h3>Нужно чуть больше времени</h3><p>Попробуй отметить ещё несколько часов или выбрать другой класс — так мы найдём больше живых групп.</p></div>`;
+  container.innerHTML = matches.length ? matches.map(party => { let claimed = false; const roles = [...party.roles, ['—','Ожидают']].slice(0,9); const slots = roles.map(([role,label]) => { const mine = !claimed && role === code; const open = mine || label === 'Открыто'; if (mine) claimed = true; return [role, mine ? 'твоё место' : label, open, mine]; }); const scheduleSlots = partyLocalSlots(party); const scheduleHours = scheduleSlots.size; return `<article class="party-card"><span class="match-score">${matchPercent(party)}% MATCH</span><h3>${party.name}</h3><p class="party-sub">${party.tag} · лидер ${party.leader} <span class="identity-badge identity-badge-${party.authStatus}" title="${party.authStatus === 'guest' ? 'Данные лидера введены вручную' : 'Лидер использует профиль (демо-данные)'}">${party.authStatus === 'guest' ? 'ГОСТЬ' : 'АВТОРИЗОВАН'}</span></p><div class="slots">${slots.map(([role,label,open,mine]) => `<div class="slot ${open ? 'open' : ''} ${mine ? 'your-place' : ''}">${role}<small>${label}</small></div>`).join('')}</div><div class="party-bottom"><span>◷ ${describeWeeklySlots(scheduleSlots).join(' · ')} · ${scheduleHours} ч/нед. · ${timeZoneDisplayLabel(userTimeZone)}</span><button class="join-btn" data-party="${party.name}" type="button">ОСТАВИТЬ ЗАЯВКУ →</button></div></article>`; }).join('') : `<div class="empty-state"><span>✦</span><h3>Нужно чуть больше времени</h3><p>Попробуй отметить ещё несколько часов или выбрать другой класс — так мы найдём больше живых групп.</p></div>`;
   document.querySelector('#results').hidden = false; document.querySelector('#results').scrollIntoView({behavior:'smooth', block:'start'});
-  container.querySelectorAll('.join-btn').forEach(button => button.addEventListener('click', () => { button.textContent = 'ЗАПРОС ОТПРАВЛЕН ✓'; button.disabled = true; }));
+  container.querySelectorAll('.join-btn').forEach(button => button.addEventListener('click', () => {
+    document.dispatchEvent(new CustomEvent('partyfinder:apply', {detail:{partyName:button.dataset.party}}));
+  }));
+  document.dispatchEvent(new Event('partyfinder:results-rendered'));
 }
 document.querySelector('#findButton').addEventListener('click', () => {
   if (!selectedServerId) { document.querySelector('#findServerOptions .server-option').focus(); document.querySelector('#findServerOptions').scrollIntoView({behavior:'smooth', block:'center'}); return; }
-  if (!selectedFindCharacter()) { findCharacterSelect.focus(); return; }
+  if (!selectedFindCharacter()) { if (isGuest()) focusGuestCharacter('find'); else (findCharacterSelect.tomselect?.control_input || findCharacterSelect).focus(); return; }
   renderResults();
 });
 document.querySelector('#editSearch').addEventListener('click', () => document.querySelector('#finder').scrollIntoView({behavior:'smooth'}));
