@@ -1,30 +1,41 @@
-# Party Finder — frontend prototype
+# Party Finder — локальный прототип с общим API
 
-Local frontend for finding a Lineage II party or recruiting one. No real authentication, character database, or application API is connected yet.
+Поиск пати и создание объявлений работают в двух оболочках: публичной и «кабинете». Обе используют один API и одну SQLite-базу. Данные не публикуются в интернете и доступны только на этом компьютере.
 
-## Run
+## Запуск
 
-From the repository root:
+Нужен Python 3.11+. В PowerShell из корня проекта:
 
 ```powershell
-python -m http.server 8003 --bind 127.0.0.1
+python -m pip install --target .local-packages -r requirements.txt
+python server.py
 ```
 
-Open `http://127.0.0.1:8003/party-finder/#ru`.
+Открыть [Party Finder](http://127.0.0.1:8003/party-finder/#ru). Если порт занят, остановить прежний сервер; `python -m http.server` **не подходит**, потому что он не обслуживает API. Для другого порта можно задать `PARTY_FINDER_PORT`.
 
-## Two presentations
+Проверить общий API без изменения рабочей базы:
 
-- **Guest:** choose a mode, then “Продолжить без авторизации”. The public ElmoreLab-inspired presentation stays in place; name, class, and level are entered manually.
-- **Demo account:** use the test credentials shown in the local login dialog. The page reloads to `?view=cabinet&mode=find` or `?view=cabinet&mode=create` with a cabinet-style shell. Its light/dark setting is stored in this browser.
+```powershell
+python -m unittest discover -s tests -v
+```
 
-The two presentations use the same `app.js` and `applications.js` logic and the same local demo data. `cabinet.css` and `cabinet.js` only provide the authenticated presentation and navigation. The shell was designed after reviewing the Russian ElmoreLab profile, its light and dark styles, and the public theme variables in `cabinet.css` / `cabinet-dark.css` on `profile.elmorelab.com`. It is a local adaptation, not a copy of the authenticated profile page.
+База создаётся автоматически в `data/party-finder.sqlite3`. Она не добавляется в Git. Чтобы начать с чистой базы, останови сервер и удали **только этот файл** (и одноимённые `-wal`/`-shm`, если они остались), затем запусти сервер снова. Это безвозвратно удалит локальные объявления и отклики. Кнопка «Вернуть демо-шаблон» в интерфейсе сбрасывает только объявления тестового аккаунта.
 
-## Backend integration points
+## Что уже работает
 
-- Replace the local demo/guest session in `app.js` with a server-verified session. A local page cannot read the authenticated cookies of `profile.elmorelab.com` across origins.
-- Replace `demoCharacters` with characters and current levels returned for the signed-in account.
-- Replace application fixtures and `localStorage` persistence in `applications.js` with backend endpoints; check availability, vacancies, and permissions on the server.
-- Store times in a canonical timezone and convert to the viewer’s timezone at the edges.
-- Keep unverified guest class/level visually distinct from verified profile data.
+- Общие объявления, состав уже собранной пати, вакансии и отклики для публичной и кабинетной страниц.
+- Поиск проверяет сервер, класс, уровень и полное покрытие минимального расписания пати. Время переводится между часовыми поясами.
+- Контакты лидера открываются игроку после подачи заявки; в результатах поиска они скрыты. Контакты кандидата получает только он сам и лидер объявления после подачи заявки.
+- Гость вводит персонажа вручную. Тестовый вход (`demo@party.local` / `Party2026!`) имитирует выбор персонажа из профиля и показывает бейдж, но не доказывает владение настоящим персонажем.
+- Лидер принимает, отклоняет и исключает кандидатов; игрок отзывает заявку и может подать её повторно после отказа. Одновременно можно откликнуться в несколько пати.
+- Созданное объявление действует 7 суток. Если новый отклик приходит в последние 24 часа, срок продлевается на 24 часа; следующий отклик не продлит его снова, пока до конца не останется меньше суток. После истечения объявление не участвует в поиске. Демо-плейсхолдеры живут дольше для проверки интерфейса.
 
-Third-party assets are present in `assets/`; clarify redistribution rights before using this repository as a production source.
+Сервер слушает только `127.0.0.1`. Гостевая личность хранится 30 дней в отдельной HttpOnly cookie этого браузера; тестовый ЛК использует другую cookie, поэтому две вкладки не переключают друг другу владельца объявлений. При удалении гостевой cookie доступ к её объявлениям/откликам будет потерян, хотя сами записи останутся. Это **не** продакшен-авторизация. Демо-пароль и данные намеренно присутствуют в коде.
+
+## Передача разработчику
+
+Контракт и структура таблиц описаны в [docs/INTEGRATION.md](docs/INTEGRATION.md) и [schema.sql](schema.sql). Настоящие данные персонажа сейчас заменены константой `DEMO_CHARACTERS` в [server.py](server.py). Разработчику нужно заменить её на проверенный вызов ЛК: клиент не должен сам выставлять бейдж и уровень как доверенные данные. Публичная и кабинетная оболочки могут остаться разными, но должны использовать одну серверную модель объявлений и откликов.
+
+Перед публикацией обязательны настоящая авторизация, постоянная идентичность гостей (или понятное восстановление), HTTPS, защита от CSRF/спама, ограничение частоты запросов, валидация контактов, миграции БД и решение о сроке хранения персональных данных. Текущий Python-сервер — локальный проверяемый прототип, не готовый production backend.
+
+Сторонние изображения и стили в `assets/` требуют проверки прав на распространение.

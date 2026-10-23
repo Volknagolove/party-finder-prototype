@@ -1,0 +1,22 @@
+
+        :root {
+            --theme-default: #ffc24c;
+            --theme-secondary: #f4d18a;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+        }
+        .transform {
+            transform: rotate(180deg);
+        }
+        .page-wrapper,
+        body.dark-only .page-wrapper {
+            background:
+                linear-gradient(to bottom, #1a0e08 0%, rgba(0,0,0,0) 40%, black 100%),
+                url(https://profile.elmorelab.com/img/bg_cabinet.jpg);
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-color: #21130b;
+        }
+    

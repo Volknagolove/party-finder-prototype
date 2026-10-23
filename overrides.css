@@ -141,6 +141,8 @@ body > header.header{position:relative}
 .create-side-count{display:flex;align-items:center;gap:14px;border-top:1px solid #655044;margin-top:42px;padding-top:17px}.create-side-count b{color:#e3a06d;font:600 47px Cinzel}.create-side-count span{color:#bbaca0;font:700 10px/1.5 Manrope;text-transform:uppercase;letter-spacing:.08em}
 .created-preview{max-width:760px;margin:22px 0 0;padding:29px 32px;border:1px solid #c27450;background:#2a201e}
 .created-preview h3{font:600 24px Cinzel;margin:13px 0 8px}.created-preview p:not(.eyebrow){color:#c1b1a6}.created-preview small{display:block;color:#a89990;margin-top:19px}
+.created-preview .created-preview-expiry{margin:12px 0 0;color:#c1b1a6;font:500 12px/1.5 Manrope,Arial,sans-serif}
+.created-preview .created-preview-expiry strong{margin-left:4px;color:#efb78d;font-weight:800}
 .created-preview-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:22px}.created-preview-slots span{padding:11px;border:1px solid #61473b;color:#e2cbb9;font:600 10px Manrope}
 @media(max-width:900px){.create-layout{grid-template-columns:1fr}.create-side{min-height:0}.create-side-count{margin-top:22px}}
 @media(max-width:620px){.create-layout .create-party-card{padding:25px 18px}.create-form-grid{grid-template-columns:1fr}.create-days{gap:3px}.create-day{font-size:9px}.create-slot-list{grid-template-columns:1fr}.created-preview{padding:23px 18px}.created-preview-slots{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -186,12 +188,16 @@ body > header.header{position:relative}
 .roster-field input{height:24px;padding:0 5px;font-size:10px}
 .roster-remove{align-self:center;width:22px;height:25px;padding:0;border:0;background:transparent;color:#ac8b7b;font:22px Arial;cursor:pointer}
 .roster-remove:hover{color:#f1c19c}
-.roster-count{margin:12px 0 0!important;color:#c59c7e!important;font:700 10px Manrope!important}
+.roster-count{display:block;width:100%;max-width:none!important;margin:12px 0 0!important;text-align:center!important;color:#c59c7e!important;font:700 10px Manrope!important}
 .create-form-error{margin:14px 0 0!important;color:#f0a28c!important;font:700 11px Manrope!important}
 .created-preview-schedule{margin-top:13px;font:500 10px/1.6 Manrope;word-break:normal}
 .created-preview-slots .preview-slot-occupied{border-color:#8f745f;background:#302720}
+.created-preview-slots .preview-slot-accepted{border-color:#66825e;background:#233027;color:#d8ebcb}
 .created-preview-slots .preview-slot-open{border-color:#b46545;background:#34221e;color:#efb78d}
 .created-preview-slots .preview-slot-empty{border-color:#3e3432;color:#847972}
+.party-app .accepted-member-list{margin-top:7px}
+.party-app .accepted-member-row{margin-bottom:0;border-color:#66825e;background:#233027;color:#d8ebcb}
+.party-app .accepted-member-row strong{color:#a8d999}
 @media(max-width:620px){
   .create-time-labels,.create-schedule-row{grid-template-columns:42px minmax(0,1fr)}
   .create-time-labels>div span{font-size:8px}
@@ -316,6 +322,7 @@ body > header.header{position:relative}
 .party-app .create-side,
 .party-app .how-card{overflow:hidden}
 .party-app .mode-card-content{border-radius:inherit}
+.party-app .how-card::after{content:none}
 .party-app .server-option,
 .party-app .selected-character,
 .party-app .leader-row,
@@ -328,6 +335,10 @@ body > header.header{position:relative}
 }
 .party-app .schedule-wrap,
 .party-app .create-schedule-wrap{overflow:hidden}
+.party-app .results-bar{min-width:0;gap:12px}
+.party-app .results-bar #resultSummary{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 9px;min-width:0;overflow-wrap:anywhere}
+.party-app .results-bar #resultSummary strong{font-weight:800;color:var(--text)}
+.party-app .results-bar #resultSummary span{color:var(--muted)}
 .party-app .server-option.selected{box-shadow:inset 0 0 0 1px rgba(222,145,101,.28),0 10px 25px rgba(0,0,0,.24)}
 .party-app .selected-character-mark{border-radius:var(--party-radius-md)}
 .party-app .find-button,
@@ -455,6 +466,13 @@ body > header.header{position:relative}
 .roster-add-end:hover:not(:disabled){transform:translateY(-1px);border-color:#d88759;background:#37231e;box-shadow:0 0 0 3px rgba(208,125,84,.1)}
 .roster-add-end:disabled{opacity:.36;cursor:not-allowed}
 .roster-count{text-align:center}
+body:not(.cabinet-view) .party-app #createParty>.section-heading{display:none}
+.party-app .create-party-card .create-step-heading{margin:29px 0 16px;gap:17px}
+.party-app .create-party-card>.create-step-heading:first-child{margin-top:0}
+.party-app .create-party-card .create-step-heading h3{margin:0;color:var(--text);font:600 23px/1.25 Cinzel,serif}
+.party-app .create-party-card .create-step-heading+.server-options{margin-top:0}
+.party-app .create-party-card .create-step-heading+.create-roster-heading{margin-top:0}
+.party-app .create-party-card .create-roster-heading h3{font-size:19px}
 @media(max-width:620px){
   .create-party-card .leader-row,
   .create-party-card .roster-row{
@@ -506,3 +524,21 @@ body > header.header{position:relative}
 .party-app .party-bottom{gap:12px}
 .party-app .party-bottom>span{min-width:0;line-height:1.55}
 .party-app .party-bottom .join-btn{flex:0 0 auto}
+
+/* Accepted players keep the same editable roster rhythm, with a deliberate removal step. */
+.party-app .create-party-card .accepted-member-row{grid-template-columns:30px minmax(0,1fr) minmax(120px,auto) 24px}
+.party-app .accepted-member-row>span:nth-child(2){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.party-app .accepted-member-row>.accepted-member-remove{grid-column:4;grid-row:1;color:#d9b6a1}
+.party-app .accepted-member-row>.accepted-member-remove:hover{color:#ff9d88}
+.party-app .accepted-member-row>.accepted-member-remove:disabled{opacity:.4;cursor:not-allowed}
+.party-app .accepted-member-confirm{grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:9px 0 1px;border-top:1px solid #57714f;font:600 10px/1.45 Manrope,Arial,sans-serif}
+.party-app .accepted-member-confirm>span{flex:1 1 180px;color:#d8ebcb}
+.party-app .accepted-member-confirm button{padding:7px 10px;border:1px solid #66825e;border-radius:7px;background:#2e4230;color:#e2f3d8;font:800 9px Manrope,Arial,sans-serif;cursor:pointer}
+.party-app .accepted-member-confirm button[data-confirm-accepted]{border-color:#a66d61;background:#4a2927;color:#ffccbc}
+.party-app .accepted-member-confirm button:disabled{opacity:.55;cursor:wait}
+@media(max-width:620px){
+  .party-app .create-party-card .accepted-member-row{grid-template-columns:22px minmax(0,1fr) 22px}
+  .party-app .create-party-card .accepted-member-row strong{grid-column:2;grid-row:2}
+  .party-app .accepted-member-row>.accepted-member-remove{grid-column:3;grid-row:1}
+  .party-app .accepted-member-confirm{grid-row:3}
+}
