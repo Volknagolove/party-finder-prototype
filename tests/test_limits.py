@@ -136,6 +136,31 @@ class LimitsTest(unittest.TestCase):
             self.apply(applicant, target, 'PlayerSS')
         self.assertEqual(duplicate.exception.status, 409)
 
+    def test_canonically_equivalent_guest_names_share_application_identity(self):
+        target = self.party(self.owner())
+        applicant = self.owner()
+        first = self.apply(applicant, target, 'Café')
+        with self.assertRaises(server.ApiError) as cooldown:
+            self.apply(applicant, target, 'Cafe\u0301')
+        self.assertEqual(cooldown.exception.status, 429)
+        self.db.execute('UPDATE applications SET created_at=? WHERE id=?',
+                        (server.now_ms()-server.APPLICATION_COOLDOWN_MS-1, first['id']))
+        with self.assertRaises(server.ApiError) as duplicate:
+            self.apply(applicant, target, 'Cafe\u0301')
+        self.assertEqual(duplicate.exception.status, 409)
+
+    def test_startup_rekeys_existing_guest_applications(self):
+        target = self.party(self.owner())
+        applicant = self.owner()
+        first = self.apply(applicant, target, 'Café')
+        self.db.execute('UPDATE applications SET character_key=?, character_id=?, created_at=? WHERE id=?',
+                        ('teon:cafe\u0301', 'guest:teon:cafe\u0301',
+                         server.now_ms()-server.APPLICATION_COOLDOWN_MS-1, first['id']))
+        server.initialize_database(self.db)
+        with self.assertRaises(server.ApiError) as duplicate:
+            self.apply(applicant, target, 'Cafe\u0301')
+        self.assertEqual(duplicate.exception.status, 409)
+
     def test_zone_fallback_and_sub_hour_offsets(self):
         for zone in (None, '', '../UTC', 'Not/AZone'):
             self.assertEqual(server.time_zone(zone), 'Europe/Kyiv')

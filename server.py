@@ -12,6 +12,7 @@ import re
 import sqlite3
 import sys
 import time
+import unicodedata
 import uuid
 from contextlib import closing
 from datetime import datetime, timedelta, timezone
@@ -65,10 +66,14 @@ def initialize_database(connection):
                 connection.execute(f"ALTER TABLE {table} ADD COLUMN {name} {definition}")
     connection.execute("UPDATE sessions SET owner_key=id WHERE owner_key IS NULL")
     connection.execute("UPDATE applications SET expires_at=created_at+? WHERE expires_at IS NULL", (LIFETIME_MS,))
-    for row in connection.execute("""SELECT a.id, a.character_name, p.server_id FROM applications a
-                                   JOIN parties p ON p.id=a.party_id WHERE a.character_key=''""").fetchall():
-        connection.execute("UPDATE applications SET character_key=? WHERE id=?",
-                           (character_key(row["server_id"], row["character_name"]), row["id"]))
+    for row in connection.execute("""SELECT a.id, a.character_name, a.character_key,
+                                   a.character_id, a.auth_status, p.server_id FROM applications a
+                                   JOIN parties p ON p.id=a.party_id""").fetchall():
+        key = character_key(row["server_id"], row["character_name"])
+        character_id = "guest:" + key if row["auth_status"] == "guest" else row["character_id"]
+        if row["character_key"] != key or row["character_id"] != character_id:
+            connection.execute("UPDATE applications SET character_key=?, character_id=? WHERE id=?",
+                               (key, character_id, row["id"]))
     connection.execute("CREATE INDEX IF NOT EXISTS parties_ip_active ON parties(creator_ip,status,expires_at)")
     connection.execute("CREATE INDEX IF NOT EXISTS applications_ip_pending ON applications(creator_ip,status,expires_at)")
     connection.execute("CREATE INDEX IF NOT EXISTS applications_owner_pending ON applications(owner_key,status,expires_at)")
@@ -91,8 +96,13 @@ def history_maintenance(stop):
             pass  # Retry on the next scheduled pass.
 
 
+def canonical_character_name(name):
+    # NFC keeps visually identical composed/decomposed names under one identity.
+    return unicodedata.normalize("NFC", unicodedata.normalize("NFC", name.strip()).casefold())
+
+
 def character_key(server_id, name):
-    return server_id + ":" + name.strip().casefold()
+    return server_id + ":" + canonical_character_name(name)
 
 
 class DeadlineReader:
@@ -493,9 +503,7 @@ def create_application(connection: sqlite3.Connection, owner_key: str, mode: str
         level = payload.get("level")
         if class_name not in VALID_CLASSES or type(level) is not int or not 1 <= level <= 80:
             raise ApiError(400, "Укажи класс и уровень персонажа.")
-        # Keep the persisted identity in sync with duplicate/cooldown checks.
-        # casefold() handles Unicode names consistently across all guest flows.
-        character_id = f"guest:{party['server_id']}:{name.casefold()}"
+        character_id = "guest:" + character_key(party["server_id"], name)
         auth_status = "guest"
     key = character_key(party["server_id"], name)
     previous = connection.execute("""SELECT created_at FROM applications WHERE party_id=? AND character_key=?
