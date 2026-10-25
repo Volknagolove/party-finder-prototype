@@ -19,7 +19,7 @@ async function ensureGuestSession() {
 async function partyApi(path, options = {}) {
   let response;
   try {
-    const access = sessionStorage.getItem('partyFinder.demoSession.v3');
+    const access = sessionStorage.getItem('partyFinder.access.v1');
     if (access === 'guest' && (path === '/bootstrap' ||
         ((options.method || 'GET').toUpperCase() !== 'GET' && !path.startsWith('/session/')))) {
       await ensureGuestSession();

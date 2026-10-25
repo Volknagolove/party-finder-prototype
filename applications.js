@@ -2,11 +2,11 @@
 const contactKey = isGuest() ? 'partyFinder.contacts.guest.v1' : 'partyFinder.contacts.v1';
 let listingCountdownInterval = null;
 
-function readDemoData(key, fallback) {
+function readStoredData(key, fallback) {
   try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
   catch { return fallback; }
 }
-function saveDemoData(key, value) {
+function saveStoredData(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); }
   catch { /* The current page still works when browser storage is unavailable. */ }
 }
@@ -27,6 +27,12 @@ function updateListingCountdown() {
   const output = document.querySelector('#createdPreview [data-listing-countdown]');
   if (!output || !ownedListing?.expiresAt) return;
   const remaining = Number(ownedListing.expiresAt) - Date.now();
+  if (ownedListing.status === 'closed') {
+    const expiry = output.parentElement;
+    expiry.replaceChildren('Объявление закрыто');
+    expiry.hidden = false;
+    return;
+  }
   output.textContent = countdownLabel(remaining);
   output.closest('.created-preview-expiry').hidden = false;
 }
@@ -55,7 +61,7 @@ function contactCards(contacts) {
   }).join('');
 }
 function applicationStatus(status) {
-  return ({pending:'На рассмотрении', accepted:'Принят в пати', declined:'Отказ', withdrawn:'Отозвана', removed:'Исключён из пати'})[status] || 'На рассмотрении';
+  return ({pending:'На рассмотрении', accepted:'Принят в пати', declined:'Отказ', withdrawn:'Отозвана', removed:'Исключён из пати', expired:'Срок истёк'})[status] || 'На рассмотрении';
 }
 function accountBadge(status) {
   if (status === 'demo') return '<span class="identity-badge identity-badge-guest" title="Пример объявления">ДЕМО</span>';
@@ -67,22 +73,7 @@ function applicationDate(timestamp) {
 }
 function weeklySlotsInUserZone(weeklyAvailability, sourceTimeZone = userTimeZone) {
   if (!Array.isArray(weeklyAvailability)) return new Set();
-  const monday = localWeekStartDate();
-  const slots = new Set();
-  weeklyAvailability.slice(0, 7).forEach((hours, sourceDay) => {
-    if (!Array.isArray(hours)) return;
-    hours.forEach(hour => {
-      const parsed = Number(hour);
-      if (!Number.isInteger(parsed) || parsed < 0 || parsed > 23) return;
-      const sourceDate = new Date(Date.UTC(monday.year, monday.month - 1, monday.day + sourceDay));
-      const instant = zonedWallTimeToDate(sourceDate.getUTCFullYear(), sourceDate.getUTCMonth() + 1, sourceDate.getUTCDate(), parsed, sourceTimeZone);
-      const local = zonedParts(instant, userTimeZone);
-      const localDate = Date.UTC(Number(local.year), Number(local.month) - 1, Number(local.day));
-      const dayIndex = ((Math.round((localDate - monday.timestamp) / 86400000) % 7) + 7) % 7;
-      slots.add(`${dayIndex}:${Number(local.hour)}`);
-    });
-  });
-  return slots;
+  return partyLocalSlots({weeklyAvailability, timeZone:sourceTimeZone});
 }
 function applicationAvailability(availability, timeZone) {
   const slots = weeklySlotsInUserZone(availability, timeZone || userTimeZone);
@@ -99,6 +90,90 @@ function availabilityCoversListing(availability, applicantTimeZone, listing) {
 
 let submittedApplications = [];
 let ownedListing = null;
+let ownedListings = [];
+let applicationHistoryHasMore = false;
+let applicationHistoryOffset = 0;
+let applicationHistoryLoading = false;
+function mergeApplicationHistory(page, append = false) {
+  const entries = new Map((append ? submittedApplications : []).map(item => [item.id, item]));
+  page.applications.forEach(item => entries.set(item.id, item));
+  submittedApplications = [...entries.values()].map(item =>
+    item.status === 'pending' && item.expiresAt <= Date.now() ? {...item, status:'expired'} : item);
+}
+function updateHistoryButtons() {
+  document.querySelectorAll('[data-load-history]').forEach(button => {
+    button.hidden = !applicationHistoryHasMore;
+    button.disabled = applicationHistoryLoading;
+    button.textContent = applicationHistoryLoading ? 'ЗАГРУЖАЕМ…' : 'ПОКАЗАТЬ БОЛЕЕ РАННИЕ ЗАЯВКИ';
+  });
+}
+document.querySelectorAll('[data-load-history]').forEach(button => button.addEventListener('click', async () => {
+  if (applicationHistoryLoading) return;
+  applicationHistoryLoading = true;
+  updateHistoryButtons();
+  try {
+    const page = await partyApi('/bootstrap?offset=' + applicationHistoryOffset);
+    mergeApplicationHistory(page, true);
+    applicationHistoryOffset = page.applicationsNextOffset;
+    applicationHistoryHasMore = page.applicationsHasMore;
+    renderMyApplications();
+    renderLeaderInbox();
+  } catch (error) {
+    button.textContent = error.message;
+  } finally {
+    applicationHistoryLoading = false;
+    updateHistoryButtons();
+  }
+}));
+
+const listingSelectionKey = 'partyFinder.selectedListing.v1';
+function renderListingManager() {
+  const select = document.querySelector('#ownedListingSelect');
+  const current = ownedListing?.id || 'new';
+  const options = [new Option('Создать новую пати', 'new')];
+  ownedListings.forEach(listing => {
+    const state = listing.status === 'closed' ? 'закрыта' : listing.expiresAt <= Date.now() ? 'срок истёк' : 'активна';
+    options.push(new Option(listing.name + ' · ' + state, listing.id));
+  });
+  select.replaceChildren(...options);
+  select.value = current;
+  document.querySelector('#ownedListingCount').textContent =
+    ownedListings.filter(item => item.status === 'active' && item.expiresAt > Date.now()).length + ' / 5 активных пати';
+}
+function selectOwnedListing(id) {
+  sessionStorage.setItem(listingSelectionKey, id);
+  ownedListing = ownedListings.find(item => item.id === id) || null;
+  displayedListing = ownedListing;
+  createFormHydrated = false;
+  if (!ownedListing) {
+    document.querySelector('#createPartyForm').reset();
+    document.querySelector('#leaderGuestClass').tomselect?.clear();
+    for (const row of [...memberList.children, ...vacancyList.children]) {
+      row.querySelector('.roster-class-select')?.tomselect?.destroy();
+      row.remove();
+    }
+    createAvailability.forEach(day => day.clear());
+    syncCreateGrid();
+    addMember();
+    addVacancy();
+    updateLeaderCharacter();
+    updateRoster();
+  }
+  hydrateCreateForm();
+  renderOwnedListingState(ownedListing);
+  renderLeaderInbox();
+  renderListingManager();
+  updateDeletePartyVisibility();
+}
+document.querySelector('#ownedListingSelect').addEventListener('change', event => selectOwnedListing(event.target.value));
+document.querySelector('#newPartyListing').addEventListener('click', () => selectOwnedListing('new'));
+
+function applicationExpiryNote(application) {
+  return application.status === 'pending'
+    ? '<small class="application-expiry">На рассмотрение: ещё ' + countdownLabel(application.expiresAt - Date.now()) + '</small>'
+    : '';
+}
+
 let deletedListingId = null;
 let inboxFilter = 'all';
 let removalCandidateId = null;
@@ -149,7 +224,7 @@ function renderMyApplications() {
   container.innerHTML = mine.map(application => {
     const active = ['pending','accepted'].includes(application.status);
     const server = servers.find(item => item.id === application.serverId)?.name || application.serverId;
-    return `<article class="application-card application-card-${escapeApplicationText(application.status)}"><div class="application-card-top"><div class="application-card-identity"><span class="application-kicker">${escapeApplicationText(server)} · ${escapeApplicationText(applicationDate(application.createdAt))}${application.demoApplication ? ' · ДЕМО' : ''}</span><h3>${escapeApplicationText(application.partyName)}</h3><p>${escapeApplicationText(application.characterName)} · ${escapeApplicationText(application.className)} · ${escapeApplicationText(application.level)} ур. ${accountBadge(application.authStatus)}</p></div><span class="application-status application-status-${escapeApplicationText(application.status)}">${applicationStatus(application.status)}</span></div><div class="application-info-row"><div class="application-availability"><span>МОГУ ИГРАТЬ</span><strong>${escapeApplicationText(applicationAvailability(application.availability, application.timeZone))}</strong></div>${active ? `<div class="application-contact-area"><span class="application-leader-line">ЛИДЕР · ${escapeApplicationText(application.leaderName)} ${accountBadge(application.leaderAuthStatus)}</span><div class="application-contact-list">${contactCards(application.leaderContacts)}</div></div>` : ''}</div><div class="application-card-foot"><span>${application.status === 'pending' ? 'Ждём решения лидера' : application.status === 'accepted' ? 'Свяжитесь, чтобы договориться об игре' : 'Заявка закрыта'}</span>${active ? `<button class="application-text-button" data-withdraw="${escapeApplicationText(application.id)}" type="button">ОТОЗВАТЬ</button>` : ''}</div></article>`;
+    return `<article class="application-card application-card-${escapeApplicationText(application.status)}"><div class="application-card-top"><div class="application-card-identity"><span class="application-kicker">${escapeApplicationText(server)} · ${escapeApplicationText(applicationDate(application.createdAt))}${application.demoApplication ? ' · ДЕМО' : ''}</span><h3>${escapeApplicationText(application.partyName)}</h3><p>${escapeApplicationText(application.characterName)} · ${escapeApplicationText(application.className)} · ${escapeApplicationText(application.level)} ур. ${accountBadge(application.authStatus)}</p></div><div class="application-status-stack"><span class="application-status application-status-${escapeApplicationText(application.status)}">${applicationStatus(application.status)}</span>${applicationExpiryNote(application)}</div></div><div class="application-info-row"><div class="application-availability"><span>МОГУ ИГРАТЬ</span><strong>${escapeApplicationText(applicationAvailability(application.availability, application.timeZone))}</strong></div>${active ? `<div class="application-contact-area"><span class="application-leader-line">ЛИДЕР · ${escapeApplicationText(application.leaderName)} ${accountBadge(application.leaderAuthStatus)}</span><div class="application-contact-list">${contactCards(application.leaderContacts)}</div></div>` : ''}</div><div class="application-card-foot"><span>${application.status === 'pending' ? 'Ждём решения лидера' : application.status === 'accepted' ? 'Свяжитесь, чтобы договориться об игре' : 'Заявка закрыта'}</span>${active ? `<button class="application-text-button" data-withdraw="${escapeApplicationText(application.id)}" type="button">ОТОЗВАТЬ</button>` : ''}</div></article>`;
   }).join('');
 }
 
@@ -189,8 +264,8 @@ function renderLeaderInbox() {
       : 'После подачи изменились требования к классу или уровню этой вакансии.';
     return `<article class="application-card application-card-compact">
       <div class="application-card-top">
-        <div class="application-card-identity"><span class="application-kicker">${escapeApplicationText(applicationDate(application.createdAt))} · ${application.demoCandidate ? 'ДЕМО-КАНДИДАТ' : 'ИГРОК'}</span><h3>${escapeApplicationText(application.characterName)} ${accountBadge(application.authStatus)}</h3><p>${escapeApplicationText(application.className)} · ${escapeApplicationText(application.level)} ур.</p></div>
-        <span class="application-status application-status-${escapeApplicationText(application.status)}">${applicationStatus(application.status)}</span>
+        <div class="application-card-identity"><span class="application-kicker">${escapeApplicationText(applicationDate(application.createdAt))} · ИГРОК</span><h3>${escapeApplicationText(application.characterName)} ${accountBadge(application.authStatus)}</h3><p>${escapeApplicationText(application.className)} · ${escapeApplicationText(application.level)} ур.</p></div>
+        <div class="application-status-stack"><span class="application-status application-status-${escapeApplicationText(application.status)}">${applicationStatus(application.status)}</span>${applicationExpiryNote(application)}</div>
       </div>
       <div class="application-info-row"><div class="application-availability"><span>МОЖЕТ ИГРАТЬ</span><strong>${escapeApplicationText(applicationAvailability(application.availability, application.timeZone))}</strong></div>
       <div class="application-contact-area"><span>КОНТАКТЫ</span><div class="application-contact-list">${contactCards(application.contacts)}</div></div></div>
@@ -199,7 +274,7 @@ function renderLeaderInbox() {
   }).join('') : '<div class="application-empty"><strong>Заявок в этом разделе нет</strong><p>Новые отклики появятся здесь.</p></div>'}`;
 }
 
-async function publishDemoListing() {
+async function publishListing() {
   const contacts = cleanContacts({telegram:document.querySelector('#leaderTelegram').value, discord:document.querySelector('#leaderDiscord').value});
   const error = document.querySelector('#leaderContactError');
   if (!hasContacts(contacts)) {
@@ -238,6 +313,7 @@ async function publishDemoListing() {
     createFormError.scrollIntoView({behavior:'smooth', block:'center'});
     return false;
   }
+  sessionStorage.setItem(listingSelectionKey, ownedListing.id);
   createFormError.hidden = true;
   createFormHydrated = true;
   updateListingCountdown();
@@ -381,7 +457,7 @@ async function submitApplication(party, character, contacts) {
       availability:availability.map(set => [...set]), timeZone:userTimeZone, contacts}
   });
   submittedApplications.push(application);
-  saveDemoData(contactKey, contacts);
+  saveStoredData(contactKey, contacts);
   setFindContacts(contacts);
   renderMyApplications();
   updateResultApplicationButtons();
@@ -422,7 +498,7 @@ document.querySelector('#applicationToMine').addEventListener('click', () => {
 for (const input of document.querySelectorAll('#findTelegram, #findDiscord')) {
   input.addEventListener('input', () => {
     const contacts = findContacts();
-    saveDemoData(contactKey, contacts);
+    saveStoredData(contactKey, contacts);
     if (hasContacts(contacts)) {
       const hint = document.querySelector('#findContactHint');
       hint.classList.remove('is-error');
@@ -498,27 +574,7 @@ document.querySelector('#leaderInbox').addEventListener('click', async event => 
     event.target.textContent = error.message;
   }
 });
-const resetDemoOpen = document.querySelector('#resetDemoOpen');
-const resetDemoConfirm = document.querySelector('#resetDemoConfirm');
-resetDemoOpen.hidden = isGuest();
-resetDemoOpen.addEventListener('click', () => {
-  resetDemoConfirm.hidden = false;
-  resetDemoOpen.setAttribute('aria-expanded', 'true');
-  document.querySelector('#resetDemoCancel').focus();
-});
-document.querySelector('#resetDemoCancel').addEventListener('click', () => {
-  resetDemoConfirm.hidden = true;
-  resetDemoOpen.setAttribute('aria-expanded', 'false');
-  resetDemoOpen.focus();
-});
-document.querySelector('#resetDemoApply').addEventListener('click', async () => {
-  try {
-    await partyApi('/demo/reset', {method:'POST', body:{}});
-    window.location.reload();
-  } catch (error) {
-    resetDemoConfirm.querySelector('p').textContent = error.message;
-  }
-});
+
 document.addEventListener('click', async event => {
   const button = event.target.closest('[data-copy-contact]');
   if (!button) return;
@@ -616,9 +672,17 @@ async function loadPartyState() {
     location.replace(`${location.pathname}#ru`);
     return;
   }
-  ownedListing = state.listing;
+  ownedListings = state.listings || (state.listing ? [state.listing] : []);
+  const selectedListingId = sessionStorage.getItem(listingSelectionKey);
+  ownedListing = selectedListingId === "new" ? null : ownedListings.find(item => item.id === selectedListingId) || state.listing;
+  renderListingManager();
   deletedListingId = state.deletedListingId;
-  submittedApplications = state.applications;
+  mergeApplicationHistory(state, applicationHistoryOffset > 50);
+  if (applicationHistoryOffset <= 50) {
+    applicationHistoryOffset = state.applicationsNextOffset;
+    applicationHistoryHasMore = state.applicationsHasMore;
+  }
+  updateHistoryButtons();
   renderMyApplications();
   renderLeaderInbox();
   hydrateCreateForm();
@@ -626,12 +690,12 @@ async function loadPartyState() {
   updateDeletePartyVisibility();
   updateListingCountdown();
 }
-const savedFindContacts = cleanContacts(readDemoData(contactKey, {}));
+const savedFindContacts = cleanContacts(readStoredData(contactKey, {}));
 if (localStorage.getItem(contactKey) !== null) setFindContacts(savedFindContacts);
 else {
   const existingApplication = submittedApplications.find(application => application.source === 'self' && (application.authStatus || 'profile') === (isGuest() ? 'guest' : 'profile') && hasContacts(cleanContacts(application.contacts)));
   setFindContacts(existingApplication ? cleanContacts(existingApplication.contacts) : savedFindContacts);
-  if (existingApplication) saveDemoData(contactKey, cleanContacts(existingApplication.contacts));
+  if (existingApplication) saveStoredData(contactKey, cleanContacts(existingApplication.contacts));
 }
 renderMyApplications();
 renderLeaderInbox();

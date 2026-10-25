@@ -5,15 +5,10 @@ const partyApp = document.querySelector('.party-app');
 const modeChooser = document.querySelector('#modeChooser');
 const createParty = document.querySelector('#createParty');
 const loginOverlay = document.querySelector('#loginOverlay');
-const loginForm = document.querySelector('#loginForm');
-const loginEmail = document.querySelector('#loginEmail');
-const loginPassword = document.querySelector('#loginPassword');
-const loginError = document.querySelector('#loginError');
 const demoLogout = document.querySelector('#demoLogout');
 const finderSections = [...document.querySelectorAll('#finder, .party-app > .workspace, #how-it-works')];
-const authKey = 'partyFinder.demoSession.v3';
-const demoEmail = 'demo@party.local';
-const demoPassword = 'Party2026!';
+const authKey = 'partyFinder.access.v1';
+const guestPausedKey = 'partyFinder.guestPaused.v1';
 let pendingMode = null;
 let lastModeTrigger = null;
 function currentAccess() { return sessionStorage.getItem(authKey); }
@@ -42,8 +37,6 @@ function updateModeUrl(mode) {
 function closeLogin() {
   loginOverlay.hidden = true;
   document.body.classList.remove('login-open');
-  loginForm.reset();
-  loginError.hidden = true;
   lastModeTrigger?.focus();
 }
 
@@ -51,7 +44,7 @@ function showModeChooser(updateUrl = true) {
   closeLogin();
   syncAccessShell();
   demoLogout.hidden = !hasLocalAccess();
-  demoLogout.textContent = isGuest() ? 'ВЫЙТИ ИЗ ГОСТЕВОГО РЕЖИМА' : 'ВЫЙТИ ИЗ ТЕСТОВОГО АККАУНТА';
+  demoLogout.textContent = isGuest() ? 'ВЫЙТИ ИЗ ГОСТЕВОГО РЕЖИМА' : 'ВЫЙТИ';
   partyApp.classList.remove('mode-find', 'mode-create');
   partyApp.classList.add('mode-select');
   modeChooser.hidden = isCabinetView();
@@ -68,7 +61,7 @@ function showSelectedMode(mode, updateUrl = true) {
   closeLogin();
   syncAccessShell();
   demoLogout.hidden = !hasLocalAccess();
-  demoLogout.textContent = isGuest() ? 'ВЫЙТИ ИЗ ГОСТЕВОГО РЕЖИМА' : 'ВЫЙТИ ИЗ ТЕСТОВОГО АККАУНТА';
+  demoLogout.textContent = isGuest() ? 'ВЫЙТИ ИЗ ГОСТЕВОГО РЕЖИМА' : 'ВЫЙТИ';
   partyApp.classList.remove('mode-select', 'mode-find', 'mode-create');
   partyApp.classList.add(`mode-${mode}`);
   modeChooser.hidden = true;
@@ -95,7 +88,7 @@ function selectMode(mode, trigger) {
     : 'Войди, чтобы открыть набор игроков в свою пати.';
   loginOverlay.hidden = false;
   document.body.classList.add('login-open');
-  loginEmail.focus();
+  document.querySelector('#loginClose').focus();
 }
 
 document.querySelector('#findMode').addEventListener('click', event => selectMode('find', event.currentTarget));
@@ -103,8 +96,7 @@ document.querySelector('#createMode').addEventListener('click', event => selectM
 document.querySelector('#backToModes').addEventListener('click', () => showModeChooser());
 document.querySelector('#finderBack').addEventListener('click', () => showModeChooser());
 async function leaveLocalAccess() {
-  try { await partyApi('/session', {method:'DELETE'}); }
-  catch { /* The local view can still be closed if the API is unavailable. */ }
+  sessionStorage.setItem(guestPausedKey, '1');
   sessionStorage.removeItem(authKey);
   const url = new URL(window.location.href);
   url.searchParams.delete('view');
@@ -114,34 +106,14 @@ async function leaveLocalAccess() {
 demoLogout.addEventListener('click', leaveLocalAccess);
 document.querySelector('#loginClose').addEventListener('click', closeLogin);
 document.querySelector('#loginBackdrop').addEventListener('click', closeLogin);
-document.querySelector('#fillDemoLogin').addEventListener('click', () => {
-  loginEmail.value = demoEmail;
-  loginPassword.value = demoPassword;
-  loginError.hidden = true;
-  loginPassword.focus();
-});
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !loginOverlay.hidden) closeLogin();
 });
-loginForm.addEventListener('submit', async event => {
+document.querySelector('#continueAsGuest').addEventListener('click', async event => {
   event.preventDefault();
-  try {
-    await partyApi('/session/login', {method:'POST', body:{email:loginEmail.value.trim(), password:loginPassword.value}});
-  } catch (error) {
-    loginError.textContent = error.message;
-    loginError.hidden = false;
-    loginPassword.focus();
-    return;
-  }
-  sessionStorage.setItem(authKey, 'demo');
-  const url = new URL(window.location.href);
-  url.searchParams.set('view', 'cabinet');
-  url.searchParams.set('mode', pendingMode || 'find');
-  window.location.assign(url);
-});
-document.querySelector('#continueAsGuest').addEventListener('click', async () => {
   try { await partyApi('/session/guest', {method:'POST', body:{}}); }
-  catch (error) { loginError.textContent = error.message; loginError.hidden = false; return; }
+  catch { return; }
+  sessionStorage.removeItem(guestPausedKey);
   sessionStorage.setItem(authKey, 'guest');
   const url = new URL(window.location.href);
   url.searchParams.delete('view');
@@ -155,12 +127,11 @@ if (hasLocalAccess() && ['find', 'create'].includes(initialMode)) {
   showModeChooser(false);
   if (['find', 'create'].includes(initialMode)) selectMode(initialMode, document.querySelector(initialMode === 'find' ? '#findMode' : '#createMode'));
 }
-if (!hasLocalAccess()) {
+if (!hasLocalAccess() && !sessionStorage.getItem(guestPausedKey)) {
   partyApi('/session').then(session => {
     if (!session.returningGuest || hasLocalAccess()) return;
     sessionStorage.setItem(authKey, 'guest');
     syncAccessFields();
-    document.querySelector('#resetDemoOpen').hidden = true;
     if (['find', 'create'].includes(initialMode)) showSelectedMode(initialMode, false);
     else showModeChooser(false);
     if (document.readyState === 'complete') loadPartyState();
@@ -175,10 +146,13 @@ window.addEventListener('popstate', () => {
 
 const createDayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-const demoScheduleTimeZone = 'Europe/Madrid';
+const defaultTimeZone = 'Europe/Kyiv';
 const userTimeZone = (() => {
-  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; }
-  catch { return 'UTC'; }
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || defaultTimeZone;
+    new Intl.DateTimeFormat('en', {timeZone:zone});
+    return zone;
+  } catch { return defaultTimeZone; }
 })();
 const zonedPartsFormatters = new Map();
 function zonedParts(date, timeZone) {
@@ -192,7 +166,10 @@ function zonedParts(date, timeZone) {
 function timeZoneDisplayLabel(timeZone) {
   return `${timeZone} · местное время`;
 }
+const wallTimeCache = new Map();
 function zonedWallTimeToDate(year, month, day, hour, timeZone) {
+  const cacheKey = `${year}:${month}:${day}:${hour}:${timeZone}`;
+  if (wallTimeCache.has(cacheKey)) return new Date(wallTimeCache.get(cacheKey));
   const wanted = Date.UTC(year, month - 1, day, hour);
   let timestamp = wanted;
   for (let attempt = 0; attempt < 4; attempt++) {
@@ -202,6 +179,14 @@ function zonedWallTimeToDate(year, month, day, hour, timeZone) {
     timestamp += adjustment;
     if (!adjustment) break;
   }
+  // A repeated wall-clock hour starts at its first occurrence, as on the API.
+  for (let candidate = timestamp - 3 * 3600000; candidate <= timestamp + 3 * 3600000; candidate += 15 * 60000) {
+    const parts = zonedParts(new Date(candidate), timeZone);
+    const observed = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute));
+    if (observed === wanted) { timestamp = candidate; break; }
+  }
+  if (wallTimeCache.size >= 512) wallTimeCache.clear();
+  wallTimeCache.set(cacheKey, timestamp);
   return new Date(timestamp);
 }
 function localWeekStartDate() {
@@ -217,14 +202,22 @@ function partyLocalSlots(party) {
   for (let sourceDay = 0; sourceDay < 7; sourceDay++) {
     const sourceDate = new Date(Date.UTC(monday.year, monday.month - 1, monday.day + sourceDay));
     for (const hour of party.weeklyAvailability?.[sourceDay] || party.hours || []) {
-      const instant = zonedWallTimeToDate(sourceDate.getUTCFullYear(), sourceDate.getUTCMonth() + 1, sourceDate.getUTCDate(), hour, party.timeZone || demoScheduleTimeZone);
-      const local = zonedParts(instant, userTimeZone);
-      const localDate = Date.UTC(Number(local.year), Number(local.month) - 1, Number(local.day));
-      const dayIndex = ((Math.round((localDate - monday.timestamp) / 86400000) % 7) + 7) % 7;
-      slots.add(`${dayIndex}:${Number(local.hour)}`);
+      const zone = party.timeZone || defaultTimeZone;
+      const start = zonedWallTimeToDate(sourceDate.getUTCFullYear(), sourceDate.getUTCMonth() + 1, sourceDate.getUTCDate(), hour, zone);
+      const end = zonedWallTimeToDate(sourceDate.getUTCFullYear(), sourceDate.getUTCMonth() + 1, sourceDate.getUTCDate(), hour + 1, zone);
+      for (let stamp = start.getTime(); stamp < end.getTime(); stamp += 60000) {
+        const local = zonedParts(new Date(stamp), userTimeZone);
+        const localDate = Date.UTC(Number(local.year), Number(local.month) - 1, Number(local.day));
+        const dayIndex = ((Math.round((localDate - monday.timestamp) / 86400000) % 7) + 7) % 7;
+        slots.add(`${dayIndex}:${Number(local.hour) * 60 + Number(local.minute)}`);
+      }
     }
   }
   return slots;
+}
+function formatMinute(value) {
+  const minute = ((value % 1440) + 1440) % 1440;
+  return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
 }
 function describeWeeklySlots(slots) {
   const byDay = Array.from({length:7}, () => new Set());
@@ -237,9 +230,9 @@ function describeWeeklySlots(slots) {
     let start = ordered[0], end = start;
     ordered.slice(1).forEach(hour => {
       if (hour === end + 1) end = hour;
-      else { ranges.push(`${String(start).padStart(2,'0')}:00–${String((end + 1) % 24).padStart(2,'0')}:00`); start = end = hour; }
+      else { ranges.push(`${formatMinute(start)}–${formatMinute(end + 1)}`); start = end = hour; }
     });
-    ranges.push(`${String(start).padStart(2,'0')}:00–${String((end + 1) % 24).padStart(2,'0')}:00`);
+    ranges.push(`${formatMinute(start)}–${formatMinute(end + 1)}`);
     const key = ranges.join(', ');
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(day);
@@ -273,27 +266,11 @@ function guestCharacter(prefix) {
   const className = document.querySelector(`#${prefix}GuestClass`).value;
   const level = Number(document.querySelector(`#${prefix}GuestLevel`).value);
   if (!selectedServerId || !name || !className || !Number.isInteger(level) || level < 1 || level > 80) return null;
-  return {id:`guest:${selectedServerId}:${name.toLowerCase()}:${className}`, serverId:selectedServerId, name, className, level};
+  return {id:`guest:${selectedServerId}:${name.toLowerCase()}`, serverId:selectedServerId, name, className, level};
 }
 // Demo account data. Replace this source with the authenticated profile API later.
-const demoCharacters = [
-  {id:'char-101', serverId:'bartz', name:'Kain', className:'Warcryer', level:78},
-  {id:'char-102', serverId:'bartz', name:'Mirael', className:'Paladin', level:76},
-  {id:'char-103', serverId:'bartz', name:'Elyria', className:'Bishop', level:74},
-  {id:'char-104', serverId:'bartz', name:'Ardent', className:'Gladiator', level:79},
-  {id:'char-105', serverId:'bartz', name:'Lunara', className:'Spellsinger', level:77},
-  {id:'char-201', serverId:'teon', name:'Rhett', className:'Dark Avenger', level:72},
-  {id:'char-202', serverId:'teon', name:'Serena', className:'Elven Elder', level:73},
-  {id:'char-203', serverId:'teon', name:'Torvik', className:'Destroyer', level:75},
-  {id:'char-204', serverId:'teon', name:'Shade', className:'Treasure Hunter', level:74},
-  {id:'char-205', serverId:'teon', name:'Aether', className:'Sorcerer', level:76},
-  {id:'char-301', serverId:'erica', name:'Selene', className:'Shillien Elder', level:74},
-  {id:'char-302', serverId:'erica', name:'Varyn', className:'Warlord', level:77},
-  {id:'char-303', serverId:'erica', name:'Neris', className:'Necromancer', level:76},
-  {id:'char-304', serverId:'erica', name:'Lyra', className:'Swordsinger', level:75},
-  {id:'char-305', serverId:'erica', name:'Morrin', className:'Phantom Summoner', level:73}
-];
-const charactersById = new Map(demoCharacters.map(character => [character.id, character]));
+const profileCharacters = []; // Filled by the verified profile integration.
+const charactersById = new Map(profileCharacters.map(character => [character.id, character]));
 function selectedLeaderCharacter() { return isGuest() ? guestCharacter('leader') : charactersById.get(leaderCharacterSelect.value); }
 function selectedFindCharacter() { return isGuest() ? guestCharacter('find') : charactersById.get(findCharacterSelect.value); }
 function focusGuestCharacter(prefix) {
@@ -323,7 +300,7 @@ function populateCharacterSelect(select) {
   if (select.tomselect) select.tomselect.destroy();
   select.replaceChildren(new Option(selectedServerId ? 'Выбери персонажа' : 'Сначала выбери сервер', ''));
   select.disabled = !selectedServerId;
-  demoCharacters.filter(character => character.serverId === selectedServerId).forEach(character => {
+  profileCharacters.filter(character => character.serverId === selectedServerId).forEach(character => {
     select.add(new Option(`${character.name} · ${character.className} · ${character.level} ур.`, character.id));
   });
   if (selectedServerId) {
@@ -331,7 +308,7 @@ function populateCharacterSelect(select) {
     new TomSelect(select, {
       create: false,
       maxItems: 1,
-      maxOptions: demoCharacters.length,
+      maxOptions: profileCharacters.length,
       closeAfterSelect: true,
       onItemAdd() { requestAnimationFrame(() => this.blur()); },
       searchField: searchable ? ['text'] : [],
@@ -753,7 +730,7 @@ document.querySelector('#createPartyForm').addEventListener('submit', async even
   const submitButton = document.querySelector('#createPartyForm button[type="submit"]');
   submitButton.disabled = true;
   let saved;
-  try { saved = await publishDemoListing(); }
+  try { saved = await publishListing(); }
   finally { submitButton.disabled = false; }
   if (!saved) return;
   createFormError.hidden = true;
@@ -852,7 +829,7 @@ function partyFromApi(listing) {
 function escapePartyText(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
 }
-function userTimes(){ return new Set(availability.flatMap((set, day) => [...set].map(hour => `${day}:${hour}`))); }
+function userTimes(){ return new Set(availability.flatMap((set, day) => [...set].flatMap(hour => Array.from({length:60}, (_, minute) => `${day}:${hour * 60 + minute}`)))); }
 function overlapHours(party){ const user = userTimes(); return [...partyLocalSlots(party)].filter(slot => user.has(slot)); }
 function matchPercent(party){ const availableHours = Math.max(userTimes().size, 1); return Math.min(100, Math.round(overlapHours(party).length / availableHours * 100)); }
 async function renderResults({scroll = true, silent = false} = {}){
@@ -892,7 +869,7 @@ async function renderResults({scroll = true, silent = false} = {}){
     });
     const scheduleSlots = partyLocalSlots(party);
     const badge = party.authStatus === 'profile' ? 'АВТОРИЗОВАН' : party.authStatus === 'guest' ? 'ГОСТЬ' : 'ДЕМО';
-    return `<article class="party-card"><span class="match-score">${matchPercent(party)}% MATCH</span><h3>${escapePartyText(party.name)}</h3><p class="party-sub">${escapePartyText(party.tag)} · лидер ${escapePartyText(party.leader)} <span class="identity-badge identity-badge-${party.authStatus === 'profile' ? 'profile' : 'guest'}">${badge}</span></p><div class="slots">${slots.map(slot => `<div class="slot ${slot.open ? 'open' : ''} ${slot.mine ? 'your-place' : ''}">${escapePartyText(classDisplayCode(slot.code))}<small>${escapePartyText(slot.label)}</small></div>`).join('')}</div><div class="party-bottom"><span>◷ ${escapePartyText(describeWeeklySlots(scheduleSlots).join(' · '))} · ${scheduleSlots.size} ч/нед. · ${escapePartyText(timeZoneDisplayLabel(userTimeZone))}</span><button class="join-btn" data-party="${escapePartyText(party.id)}" type="button">ОСТАВИТЬ ЗАЯВКУ →</button></div></article>`;
+    return `<article class="party-card"><span class="match-score">${matchPercent(party)}% MATCH</span><h3>${escapePartyText(party.name)}</h3><p class="party-sub">${escapePartyText(party.tag)} · лидер ${escapePartyText(party.leader)} <span class="identity-badge identity-badge-${party.authStatus === 'profile' ? 'profile' : 'guest'}">${badge}</span></p><div class="slots">${slots.map(slot => `<div class="slot ${slot.open ? 'open' : ''} ${slot.mine ? 'your-place' : ''}">${escapePartyText(classDisplayCode(slot.code))}<small>${escapePartyText(slot.label)}</small></div>`).join('')}</div><div class="party-bottom"><span>◷ ${escapePartyText(describeWeeklySlots(scheduleSlots).join(' · '))} · ${Number((scheduleSlots.size / 60).toFixed(2))} ч/нед. · ${escapePartyText(timeZoneDisplayLabel(userTimeZone))}</span><button class="join-btn" data-party="${escapePartyText(party.id)}" type="button">ОСТАВИТЬ ЗАЯВКУ →</button></div></article>`;
   }).join('') : `<div class="empty-state"><h3>Пока нет подходящих пати</h3><p>Попробуй отметить ещё несколько часов или выбрать другой класс.</p></div>`;
   document.querySelector('#results').hidden = false;
   if (scroll) document.querySelector('#results').scrollIntoView({behavior:'smooth', block:'start'});

@@ -208,3 +208,16 @@
 @media(max-width:700px){.party-app .application-info-row{grid-template-columns:1fr}.party-app .application-info-row .application-contact-list{flex-wrap:wrap}.party-app .application-info-row .application-contact-card{white-space:normal}}
 @media(max-width:480px){.party-app .application-contact-grid{grid-template-columns:1fr}.party-app .application-decisions button{flex:1}.party-app .application-status{white-space:normal}.party-app .application-availability{grid-template-columns:1fr;gap:3px}.party-app .application-contact-area{align-items:flex-start;flex-direction:column}}
 @media(prefers-reduced-motion:reduce){.party-app .application-dialog{animation:none}.party-app .application-decisions button,.party-app .application-publish-button,.party-app .application-secondary-button{transition:none}}
+.party-app .listing-manager{margin:0 0 24px;padding:18px 20px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.party-app .listing-manager label{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:space-between;margin-bottom:10px;font:700 12px Manrope,Arial,sans-serif;color:var(--text)}
+.party-app .listing-manager label span{font-size:11px;font-weight:500;color:var(--muted)}
+.party-app .listing-manager-controls{display:flex;gap:10px}
+.party-app .listing-manager select{min-width:0;flex:1;padding:11px 13px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);font:600 12px Manrope,Arial,sans-serif}
+.party-app .listing-manager button{padding:10px 15px;border:1px solid var(--red2);border-radius:8px;background:var(--panel2);color:var(--text);font:700 10px Manrope,Arial,sans-serif;cursor:pointer}
+.party-app .application-status-stack{display:grid;justify-items:end;gap:6px}
+.party-app .application-expiry{color:var(--muted);font:500 10px/1.4 Manrope,Arial,sans-serif}
+body.cabinet-view .party-app .listing-manager{background:var(--cab-card);border-color:var(--cab-border)}
+body.cabinet-view .party-app .listing-manager :is(label,select,button){color:var(--cab-text)}
+body.cabinet-view .party-app .listing-manager :is(select,button){background:var(--cab-element);border-color:var(--cab-border)}
+body.cabinet-view .party-app .listing-manager label span,body.cabinet-view .party-app .application-expiry{color:var(--cab-muted)}
+@media(max-width:520px){.party-app .listing-manager-controls{flex-direction:column}}

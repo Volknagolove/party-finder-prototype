@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS parties (
   id TEXT PRIMARY KEY,
   owner_key TEXT,
+  creator_ip TEXT NOT NULL DEFAULT '',
   server_id TEXT NOT NULL,
   name TEXT NOT NULL,
   leader_character_id TEXT,
@@ -57,6 +58,9 @@ CREATE TABLE IF NOT EXISTS applications (
   id TEXT PRIMARY KEY,
   party_id TEXT NOT NULL REFERENCES parties(id),
   owner_key TEXT NOT NULL REFERENCES sessions(id),
+  creator_ip TEXT NOT NULL DEFAULT '',
+  character_key TEXT NOT NULL DEFAULT '',
+  expires_at INTEGER,
   character_id TEXT,
   character_name TEXT NOT NULL,
   class_name TEXT NOT NULL,
