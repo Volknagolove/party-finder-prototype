@@ -11,11 +11,33 @@
     <link rel="stylesheet" href="../assets/elmorelab/app.css" />
     <link rel="stylesheet" href="../assets/vendor/tom-select/tom-select.default.min.css" />
     <link rel="stylesheet" href="../styles.css" />
-    <link rel="stylesheet" href="../overrides.css?v=local-time-8" />
-    <link rel="stylesheet" href="../applications.css?v=party-controls-1" />
+    <link rel="stylesheet" href="../overrides.css?v=guest-logout-fill-1" />
+    <link rel="stylesheet" href="../applications.css?v=timezone-spam-1" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" media="not all" data-profile-style href="../assets/profile-shell/css/font-awesome.css" />
+    <link rel="stylesheet" media="not all" data-profile-style href="../assets/profile-shell/css/vendors/icofont.css" />
+    <link rel="stylesheet" media="not all" data-profile-style href="../assets/profile-shell/css/vendors/themify.css" />
+    <link rel="stylesheet" media="not all" data-profile-style href="../assets/profile-shell/css/vendors/feather-icon.css" />
+    <link rel="stylesheet" media="not all" data-profile-style href="../assets/profile-shell/css/vendors/scrollbar.css" />
+    <link rel="stylesheet" media="not all" data-profile-style href="../assets/profile-shell/css/vendors/bootstrap.css" />
+    <link rel="stylesheet" media="not all" data-profile-style href="../assets/profile-shell/css/style.css" />
+    <link rel="stylesheet" media="not all" data-profile-style href="../assets/profile-shell/css/color-1.css" />
+    <link rel="stylesheet" media="not all" data-profile-style href="../assets/profile-shell/css/responsive.css" />
+    <link rel="stylesheet" media="not all" data-profile-style href="../assets/profile-shell/css/cabinet.css" />
+    <link rel="stylesheet" media="not all" data-profile-style href="../assets/profile-shell/css/cabinet-dark.css" />
+    <link rel="stylesheet" media="not all" data-profile-style href="../assets/profile-shell/inline.css" />
+    <link rel="stylesheet" href="../cabinet.css?v=cabinet-apply-inline-1" />
   </head>
   <body>
     <div class="noise"></div>
+    <div class="cabinet-mobile-shade" id="cabinetMobileShade" hidden></div>
+    <div class="page-wrapper compact-wrapper cabinet-shell" id="cabinetShell" hidden>
+      <div id="cabinetSidebarMount"></div>
+      <div class="main-column">
+        <div id="cabinetHeaderMount"></div>
+        <div class="page-body-wrapper"><div class="page-body" id="cabinetContentMount"></div></div>
+      </div>
+    </div>
     <span id="start-countdown" hidden aria-hidden="true"></span>
     <header class="header">
       <div class="header__container _container-wide">
@@ -41,6 +63,14 @@
     </header>
 
     <main id="top" class="party-app mode-select">
+      <section class="cabinet-dashboard" id="cabinetDashboard" hidden>
+        <div class="cabinet-page-heading"><div><span class="cabinet-crumb">ЛИЧНЫЙ КАБИНЕТ / ПОИСК ПАТИ</span><h1>Поиск пати</h1><p>Найди группу для своего персонажа или открой набор в собственную команду.</p></div></div>
+        <div class="cabinet-dashboard-grid">
+          <button class="cabinet-action-card" id="cabinetFindMode" type="button"><span class="cabinet-action-icon">⌕</span><span class="cabinet-action-copy"><small>ИГРОКУ</small><strong>Найти пати</strong><span>Выбери персонажа, отметь время и посмотри подходящие вакансии.</span></span><b aria-hidden="true">→</b></button>
+          <button class="cabinet-action-card" id="cabinetCreateMode" type="button"><span class="cabinet-action-icon">✚</span><span class="cabinet-action-copy"><small>ЛИДЕРУ</small><strong>Создать пати</strong><span>Укажи состав, расписание и открой набор игроков на свободные роли.</span></span><b aria-hidden="true">→</b></button>
+        </div>
+        <div class="cabinet-dashboard-note"><span>i</span><p>Это визуальный прототип внутри кабинета. Данные персонажей и заявок пока хранятся локально; интеграция с настоящим профилем и базой заявок потребуется позже.</p></div>
+      </section>
       <section class="mode-chooser" id="modeChooser">
         <div class="chooser-intro">
           <p class="eyebrow"><span></span> ELMORELAB · PARTY FINDER</p>
@@ -58,61 +88,63 @@
 
       <section class="create-party-panel" id="createParty" hidden>
         <button class="flow-back" id="backToModes" type="button">← К ВЫБОРУ РЕЖИМА</button>
-        <div class="section-heading"><span class="step">01</span><div><p class="eyebrow">НОВАЯ ГРУППА</p><h2>Создай пати для набора</h2></div><span class="line"></span></div>
+        <div class="section-heading"><span class="step">01</span><div><h2>Создай пати для набора</h2></div></div>
+        <div class="listing-manager">
+          <label for="ownedListingSelect">Твои объявления <span id="ownedListingCount">0 / 5 активных пати</span></label>
+          <div class="listing-manager-controls"><select id="ownedListingSelect"><option value="new">Создать новую пати</option></select><button id="newPartyListing" type="button">+ НОВАЯ ПАТИ</button></div>
+        </div>
         <div class="create-layout">
-          <form class="create-party-card" id="createPartyForm">
-            <p class="eyebrow">ШАГ 01 / СЕРВЕР</p>
-            <h3>Где играет твоя пати?</h3>
+          <form class="create-party-card" id="createPartyForm" novalidate>
+            <div class="section-heading create-step-heading"><span class="step">01</span><div><h3>Где играет твоя пати?</h3></div></div>
             <div class="server-options" id="createServerOptions" role="group" aria-label="Выбор сервера"></div>
-            <p class="eyebrow create-subheading">ШАГ 02 / ОСНОВА</p>
-            <h3>О команде</h3>
+            <div class="section-heading create-step-heading"><span class="step">02</span><div><h3>О команде</h3></div></div>
             <div class="create-form-grid">
               <label>Название пати<input id="partyName" name="partyName" maxlength="36" placeholder="Например, Night Watch" required /></label>
               <label id="leaderProfileField">Твой персонаж<select id="leaderCharacter" name="leaderCharacter" required disabled><option value="">Сначала выбери сервер</option></select></label>
             </div>
-            <div class="guest-character-fields create-guest-fields" id="leaderGuestFields" hidden><p>Без авторизации укажи персонажа вручную. Класс и уровень не подтверждены профилем.</p><div class="guest-character-grid"><label>Имя персонажа<input id="leaderGuestName" maxlength="24" placeholder="Имя в игре" autocomplete="off" /></label><label>Класс<select id="leaderGuestClass"><option value="">Выбери класс</option></select></label><label>Уровень<input id="leaderGuestLevel" type="number" min="1" max="80" inputmode="numeric" placeholder="1–80" /></label></div></div>
+            <div class="guest-character-fields create-guest-fields" id="leaderGuestFields" hidden><p>Укажи имя, класс и уровень персонажа.</p><div class="guest-character-grid"><label>Имя персонажа<input id="leaderGuestName" maxlength="24" placeholder="Имя в игре" autocomplete="off" /></label><label>Класс<select id="leaderGuestClass"><option value="">Выбери класс</option></select></label><label>Уровень<input id="leaderGuestLevel" type="number" min="1" max="80" inputmode="numeric" placeholder="1–80" /></label></div></div>
             <div class="selected-character" id="selectedCharacter" hidden aria-live="polite"><span class="selected-character-mark" id="characterMark"></span><div class="selected-character-name"><small id="characterServer">ПЕРСОНАЖ</small><strong id="characterName"></strong></div><div class="selected-character-stat"><small>ТВОЙ КЛАСС</small><strong id="characterClass"></strong></div><div class="selected-character-stat"><small>УРОВЕНЬ</small><strong id="characterLevel"></strong></div></div>
-          <p class="create-help leader-help" id="leaderProfileHelp">Пока это тестовые персонажи локального аккаунта. В рабочей версии список, класс и актуальный уровень придут из профиля.</p>
-            <div class="leader-contact-intro"><p class="eyebrow">КОНТАКТ ЛИДЕРА</p><p>Укажи Telegram или Discord — достаточно одного. Игрок увидит его после подачи заявки.</p></div>
+          <p class="create-help leader-help" id="leaderProfileHelp">Выбери персонажа своего аккаунта.</p>
+            <div class="leader-contact-intro"><p class="eyebrow">КОНТАКТ ЛИДЕРА</p><p>Укажи Telegram или Discord — достаточно одного. Игрок увидит контакт после подачи заявки.</p></div>
             <div class="create-form-grid leader-contact-grid"><label><span>Telegram <img class="application-contact-icon" src="../assets/icons/telegram.svg" alt="" aria-hidden="true" /></span><input id="leaderTelegram" type="text" maxlength="64" placeholder="@username" autocomplete="off" spellcheck="false" /></label><label><span>Discord <img class="application-contact-icon" src="../assets/icons/discord.svg" alt="" aria-hidden="true" /></span><input id="leaderDiscord" type="text" maxlength="64" placeholder="username" autocomplete="off" spellcheck="false" /></label></div>
             <p id="leaderContactError" class="create-form-error" role="alert" hidden>Укажи хотя бы один контакт лидера: Telegram или Discord.</p>
-            <p class="eyebrow create-subheading">ШАГ 03 / ВРЕМЯ</p>
-            <h3>Когда играете?</h3>
-            <p class="create-help">Выделяй часы зажатой ЛКМ. Можно добавлять и убирать прямоугольники сразу в нескольких днях.</p>
+            <div class="section-heading create-step-heading"><span class="step">03</span><div><h3>Когда играете?</h3></div></div>
+            <p class="create-help">Выделяй часы зажатой ЛКМ. Можно добавлять и убирать часы сразу в нескольких днях.</p>
             <div class="create-schedule-wrap">
               <div class="create-time-labels"><span>ВРЕМЯ</span><div id="createTimeLabels"></div></div>
               <div id="createScheduleGrid" class="create-schedule-grid"></div>
             </div>
             <p class="create-schedule-foot"><span><b id="createSelectedHours">0</b> часов игры в неделю</span><span>Твоё время: <b data-user-time-zone></b></span></p>
-            <aside class="create-minimum-note" role="note"><span>ОБЯЗАТЕЛЬНЫЕ УСЛОВИЯ</span><p>Игрок должен быть свободен <strong>во все часы расписания пати</strong>, а его класс и уровень должны подходить хотя бы под одну вакансию. Заявку, которая не проходит эти условия, отправить нельзя.</p></aside>
-            <p class="eyebrow create-subheading">ШАГ 04 / СОСТАВ</p>
+            <aside class="create-minimum-note" role="note"><span>МИНИМАЛЬНЫЕ ТРЕБОВАНИЯ</span><p>Отмечай только часы, когда участие действительно обязательно, и указывай подходящий диапазон уровней. Так больше игроков смогут подать заявку на рассмотрение, а решение о приёме останется за тобой.</p></aside>
+            <div class="section-heading create-step-heading"><span class="step">04</span><div><h3>Состав и вакансии</h3></div></div>
             <div class="create-roster-heading"><div><h3>Уже в пати</h3><p class="create-help">Лидер учитывается автоматически. Добавь имена и классы остальных игроков.</p></div><button id="addMember" class="roster-add" type="button">+ ИГРОК</button></div>
             <div class="leader-row"><span class="create-slot-number">01</span><span>Ты · лидер</span><strong id="leaderCharacterDisplay">Персонаж не выбран</strong></div>
             <div id="memberList" class="roster-list"></div>
+            <div id="acceptedMemberList" class="roster-list accepted-member-list" hidden></div>
             <div class="roster-section-add"><button id="addMemberAtEnd" class="roster-add-end" type="button" aria-label="Добавить игрока в состав">+</button></div>
             <div class="create-roster-heading create-roster-heading-open"><div><h3>Кого ищете</h3><p class="create-help">Укажи класс и диапазон уровня для каждой вакансии.</p></div><button id="addVacancy" class="roster-add" type="button">+ ВАКАНСИЯ</button></div>
             <div id="vacancyList" class="roster-list"></div>
             <div class="roster-section-add"><button id="addVacancyAtEnd" class="roster-add-end" type="button" aria-label="Добавить вакансию">+</button></div>
             <p id="rosterCount" class="roster-count" aria-live="polite"></p>
             <p id="createFormError" class="create-form-error" role="alert" hidden></p>
-            <button class="find-button create-preview-button" type="submit"><span>СОЗДАТЬ ПАТИ</span><b>→</b></button>
+            <button class="find-button create-preview-button" type="submit"><span>СОЗДАТЬ ПАТИ</span><svg class="party-button-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 10h12M10 4.5l5.5 5.5-5.5 5.5"/></svg></button>
             <button class="delete-party-open" id="deletePartyOpen" type="button" aria-controls="deletePartyConfirm" aria-expanded="false" hidden>УДАЛИТЬ ПАТИ</button>
-            <div class="delete-party-confirm" id="deletePartyConfirm" hidden><div><strong>Удалить эту пати?</strong><p>Объявление и заявки к нему будут удалены из браузера. При необходимости их можно восстановить.</p></div><div><button id="deletePartyCancel" type="button">ОТМЕНА</button><button id="deletePartyApply" type="button">УДАЛИТЬ ПАТИ</button></div></div>
-            <p class="create-party-note">Демо-объявление и заявки сохраняются в этом браузере. Для настоящей публикации потребуется серверная часть.</p>
+            <div class="delete-party-confirm" id="deletePartyConfirm" hidden><div><strong>Закрыть эту пати?</strong><p>Объявление исчезнет из поиска. Заявки сохранятся в локальной базе; пати можно будет восстановить.</p></div><div><button id="deletePartyCancel" type="button">ОТМЕНА</button><button id="deletePartyApply" type="button">ЗАКРЫТЬ ПАТИ</button></div></div>
           </form>
           <aside class="create-side"><p class="eyebrow">ДЕВЯТЬ МЕСТ · ОДНА ЦЕЛЬ</p><h3>Собери тех,<br />кто прикроет<br /><em>твою спину.</em></h3><p>Сначала отметь тех, кто уже с тобой, затем опиши открытые места. Недельная сетка покажет, когда вы играете вместе.</p><div class="create-side-count"><b id="openSlotCount">1</b><span id="openSlotLabel">вакансия для набора</span></div></aside>
         </div>
         <section class="created-preview" id="createdPreview" hidden aria-live="polite"></section>
-        <section class="application-dashboard" id="leaderApplications" aria-labelledby="leaderApplicationsTitle"><div class="application-section-head"><div><p class="eyebrow">КАБИНЕТ ЛИДЕРА</p><h2 id="leaderApplicationsTitle">Заявки в твою пати</h2><p>Имя, класс, уровень и контакт каждого кандидата доступны здесь. Ты решаешь, кого принять.</p></div><div class="application-dashboard-actions"><span id="leaderApplicationsCount" class="application-count" aria-live="polite">0 заявок</span><button id="resetDemoOpen" class="application-reset-open" type="button" aria-controls="resetDemoConfirm" aria-expanded="false">↺ ВЕРНУТЬ ДЕМО-ШАБЛОН</button></div></div><div id="resetDemoConfirm" class="application-reset-confirm" hidden><div><strong>Начать демо заново?</strong><p>Текущее локальное объявление и заявки будут заменены исходной пати на Teon x1 и тестовыми откликами. Твои контактные поля останутся.</p></div><div class="application-reset-buttons"><button id="resetDemoCancel" type="button">ОТМЕНА</button><button id="resetDemoApply" type="button">СБРОСИТЬ И ВОССТАНОВИТЬ</button></div></div><div id="leaderInbox" class="application-list" aria-live="polite"></div></section>
+        <section class="application-dashboard" id="leaderApplications" aria-labelledby="leaderApplicationsTitle"><div class="application-section-head"><div><p class="eyebrow">КАБИНЕТ ЛИДЕРА</p><h2 id="leaderApplicationsTitle">Заявки в твою пати</h2><p>Имя, класс, уровень и контакт каждого кандидата доступны здесь. Ты решаешь, кого принять.</p></div><div class="application-dashboard-actions"><span id="leaderApplicationsCount" class="application-count" aria-live="polite">0 заявок</span></div></div><div id="leaderInbox" class="application-list" aria-live="polite"></div><button type="button" class="application-secondary-button" data-load-history hidden>ПОКАЗАТЬ БОЛЕЕ РАННИЕ ЗАЯВКИ</button></section>
       </section>
 
       <div class="application-overlay" id="applicationOverlay" hidden>
         <div class="application-backdrop" id="applicationBackdrop"></div>
         <section class="application-dialog" role="dialog" aria-modal="true" aria-labelledby="applicationTitle"><button id="applicationClose" class="application-close" type="button" aria-label="Закрыть окно">×</button>
           <div id="applicationCompose"><p class="eyebrow">ЗАЯВКА В ПАТИ</p><h2 id="applicationTitle">Хочу в команду</h2><p id="applicationPartyMeta" class="application-party-meta"></p><div id="applicationCharacter" class="application-character"></div>
-            <form id="applicationForm"><div class="application-contact-grid"><label>Telegram<input id="applicantTelegram" type="text" maxlength="64" placeholder="@username" autocomplete="off" spellcheck="false" /></label><label>Discord<input id="applicantDiscord" type="text" maxlength="64" placeholder="username" autocomplete="off" spellcheck="false" /></label></div><p id="applicationError" class="application-error" role="alert" hidden>Укажи хотя бы один контакт: Telegram или Discord.</p><p class="application-sharing-note">После отправки лидер увидит твой контакт, а ты — его. Отзыв заявки не отменяет уже состоявшийся обмен контактами. Это локальный демо-макет.</p><button class="find-button application-submit" type="submit"><span>ОТПРАВИТЬ ЗАЯВКУ</span><b>→</b></button></form>
+            <form id="applicationForm"><div class="application-contact-grid"><label><span>Telegram <img class="application-contact-icon" src="../assets/icons/telegram.svg" alt="" aria-hidden="true" /></span><input id="applicantTelegram" type="text" maxlength="64" placeholder="@username" autocomplete="off" spellcheck="false" /></label><label><span>Discord <img class="application-contact-icon" src="../assets/icons/discord.svg" alt="" aria-hidden="true" /></span><input id="applicantDiscord" type="text" maxlength="64" placeholder="username" autocomplete="off" spellcheck="false" /></label></div><p id="applicationError" class="application-error" role="alert" hidden>Укажи хотя бы один контакт: Telegram или Discord.</p><p class="application-sharing-note">После отправки заявки ты увидишь контакты лидера, а лидер получит твои.</p><button class="find-button application-submit" type="submit"><span>ОТПРАВИТЬ ЗАЯВКУ</span><b>→</b></button></form>
           </div>
-          <div id="applicationSuccess" hidden><p class="eyebrow">ЗАЯВКА ОТПРАВЛЕНА</p><h2>Контакт лидера<br /><em>у тебя.</em></h2><p id="applicationSuccessText" class="application-party-meta"></p><div id="applicationLeaderContacts" class="application-contact-list"></div><button id="applicationToMine" class="application-secondary-button" type="button">ПОСМОТРЕТЬ МОИ ЗАЯВКИ →</button></div>
+          <div id="applicationProblem" hidden><p class="eyebrow">ЗАЯВКА НЕДОСТУПНА</p><h2 id="applicationProblemTitle">Не удалось подать заявку</h2><p id="applicationProblemText" class="application-party-meta" role="alert"></p><button id="applicationProblemClose" class="application-secondary-button" type="button">ПОНЯТНО</button></div>
+          <div id="applicationSuccess" hidden><p class="eyebrow">ЗАЯВКА ОТПРАВЛЕНА</p><h2 id="applicationSuccessTitle">Лидер получил<br /><em>твой контакт.</em></h2><p id="applicationSuccessText" class="application-party-meta"></p><div id="applicationLeaderContacts" class="application-contact-list"></div><button id="applicationToMine" class="application-secondary-button" type="button">ПОСМОТРЕТЬ МОИ ЗАЯВКИ →</button></div>
         </section>
       </div>
 
@@ -123,16 +155,11 @@
           <p class="eyebrow"><span></span> ВХОД В PARTY FINDER</p>
           <h2 id="loginTitle">Остался один шаг<br /><em>до команды.</em></h2>
           <p id="loginContext">Войди, чтобы продолжить.</p>
-          <form id="loginForm" class="login-form">
-            <label>Email<input id="loginEmail" type="email" placeholder="Email" autocomplete="username" required /></label>
-            <label>Пароль<input id="loginPassword" type="password" placeholder="Пароль" autocomplete="current-password" required /></label>
-            <p class="login-error" id="loginError" role="alert" hidden>Неверный тестовый email или пароль.</p>
-            <button class="find-button login-submit" type="submit"><span>ВОЙТИ</span><b>→</b></button>
-          </form>
-          <div class="guest-entry"><button id="continueAsGuest" type="button">ПРОДОЛЖИТЬ БЕЗ АВТОРИЗАЦИИ →</button><p>Без авторизации класс и уровень указываются вручную. Другие игроки не смогут подтвердить данные персонажа по профилю.</p></div>
-          <div class="demo-credentials"><span>ТЕСТОВЫЙ ВХОД</span><code>demo@party.local</code><code>Party2026!</code><button id="fillDemoLogin" type="button">ПОДСТАВИТЬ ДАННЫЕ ↗</button></div>
-          <a class="official-login-link" href="https://profile.elmorelab.com/login" target="_blank" rel="noreferrer">Официальный профиль ElmoreLab ↗</a>
-          <p class="login-note">Это локальный прототип: вход тестовый, данные гостя вводятся вручную. Пароль не сохраняется.</p>
+          <a class="find-button login-submit" href="https://profile.elmorelab.com/login"><span>АВТОРИЗОВАТЬСЯ</span><b>→</b></a>
+          <a class="guest-entry" id="continueAsGuest" href="#">
+            <strong>ПРОДОЛЖИТЬ БЕЗ АВТОРИЗАЦИИ <span aria-hidden="true">→</span></strong>
+            <span>Класс и уровень персонажа можно будет указать вручную.</span>
+          </a>
         </section>
       </div>
 
@@ -149,40 +176,41 @@
       </section>
 
       <section class="workspace">
-        <div class="section-heading"><span class="step">01</span><div><p class="eyebrow">ТВОЙ ПЕРСОНАЖ</p><h2>Сервер и персонаж</h2></div><span class="line"></span></div>
+        <div class="section-heading"><span class="step">01</span><div><h2>Сервер и персонаж</h2></div></div>
         <div class="identity-flow">
-          <div class="identity-step"><span class="identity-index">01 / СЕРВЕР</span><h3>Сначала выбери сервер</h3><p>Персонажи и пати других серверов не смешиваются.</p><div class="server-options" id="findServerOptions" role="group" aria-label="Выбор сервера"></div></div>
-          <div class="identity-step"><span class="identity-index">02 / ПЕРСОНАЖ</span><h3>Кого ты поведёшь в бой?</h3><p id="findProfileHelp">Класс и уровень берутся из выбранного персонажа.</p><label class="find-character-label" id="findProfileField">Твой персонаж<select id="findCharacter" disabled><option value="">Сначала выбери сервер</option></select></label><div class="guest-character-fields" id="findGuestFields" hidden><p>Укажи данные вручную. Без профиля другие игроки не смогут их подтвердить.</p><div class="guest-character-grid"><label>Имя персонажа<input id="findGuestName" maxlength="24" placeholder="Имя в игре" autocomplete="off" /></label><label>Класс<select id="findGuestClass"><option value="">Выбери класс</option></select></label><label>Уровень<input id="findGuestLevel" type="number" min="1" max="80" inputmode="numeric" placeholder="1–80" /></label></div></div><div class="selected-character" id="findSelectedCharacter" hidden aria-live="polite"><span class="selected-character-mark" id="findCharacterMark"></span><div class="selected-character-name"><small id="findCharacterServer">ПЕРСОНАЖ</small><strong id="findCharacterName"></strong></div><div class="selected-character-stat"><small>ТВОЙ КЛАСС</small><strong id="selectedClass">Класс не выбран</strong></div><div class="selected-character-stat"><small>УРОВЕНЬ</small><strong id="findCharacterLevel"></strong></div></div></div>
+          <div class="identity-step"><span class="identity-index">01 / СЕРВЕР</span><h3>Сначала выбери сервер</h3><div class="server-options" id="findServerOptions" role="group" aria-label="Выбор сервера"></div></div>
+          <div class="identity-step"><span class="identity-index">02 / ПЕРСОНАЖ</span><h3>Кого ты поведёшь в бой?</h3><p id="findProfileHelp">Класс и уровень берутся из выбранного персонажа.</p><label class="find-character-label" id="findProfileField">Твой персонаж<select id="findCharacter" disabled><option value="">Сначала выбери сервер</option></select></label><div class="guest-character-fields" id="findGuestFields" hidden><p>Укажи данные персонажа.</p><div class="guest-character-grid"><label>Имя персонажа<input id="findGuestName" maxlength="24" placeholder="Имя в игре" autocomplete="off" /></label><label>Класс<select id="findGuestClass"><option value="">Выбери класс</option></select></label><label>Уровень<input id="findGuestLevel" type="number" min="1" max="80" inputmode="numeric" placeholder="1–80" /></label></div></div><div class="selected-character" id="findSelectedCharacter" hidden aria-live="polite"><span class="selected-character-mark" id="findCharacterMark"></span><div class="selected-character-name"><small id="findCharacterServer">ПЕРСОНАЖ</small><strong id="findCharacterName"></strong></div><div class="selected-character-stat"><small>ТВОЙ КЛАСС</small><strong id="selectedClass">Класс не выбран</strong></div><div class="selected-character-stat"><small>УРОВЕНЬ</small><strong id="findCharacterLevel"></strong></div></div></div>
         </div>
           <div class="class-columns" hidden aria-hidden="true">
             <div class="class-column"><label>ТАНКИ · 4</label><button class="class-card" data-class="Paladin" data-short="Pala"><b>Pala</b><span>Paladin<small>Человек</small></span></button><button class="class-card" data-class="Dark Avenger" data-short="DA"><b>DA</b><span>Dark Avenger<small>Человек</small></span></button><button class="class-card" data-class="Temple Knight" data-short="TK"><b>TK</b><span>Temple Knight<small>Светлый эльф</small></span></button><button class="class-card" data-class="Shillien Knight" data-short="SK"><b>SK</b><span>Shillien Knight<small>Тёмный эльф</small></span></button></div>
-            <div class="class-column"><label>САППОРТЫ · 8</label><button class="class-card" data-class="Bishop" data-short="BP"><b>BP</b><span>Bishop<small>Хил</small></span></button><button class="class-card" data-class="Elven Elder" data-short="EE"><b>EE</b><span>Elven Elder<small>Хил / речардж</small></span></button><button class="class-card" data-class="Shillien Elder" data-short="SE"><b>SE</b><span>Shillien Elder<small>Хил / баф / речардж</small></span></button><button class="class-card" data-class="Prophet" data-short="PP"><b>PP</b><span>Prophet<small>Бафер</small></span></button><button class="class-card" data-class="Warcryer" data-short="WC"><b>WC</b><span>Warcryer<small>Бафер</small></span></button><button class="class-card" data-class="Overlord" data-short="OL"><b>OL</b><span>Overlord<small>Клановый бафер / дебафер</small></span></button><button class="class-card" data-class="Swordsinger" data-short="SWS"><b>SWS</b><span>Swordsinger<small>Песни</small></span></button><button class="class-card" data-class="Bladedancer" data-short="BD"><b>BD</b><span>Bladedancer<small>Танцы</small></span></button></div>
+            <div class="class-column"><label>САППОРТЫ · 8</label><button class="class-card" data-class="Bishop" data-short="BP"><b>BP</b><span>Bishop<small>Хил</small></span></button><button class="class-card" data-class="Elven Elder" data-short="EE"><b>EE</b><span>Elven Elder<small>Хил / речардж</small></span></button><button class="class-card" data-class="Shillien Elder" data-short="SE"><b>SE</b><span>Shillien Elder<small>Хил / баф / речардж</small></span></button><button class="class-card" data-class="Prophet" data-short="PP"><b>PP</b><span>Prophet<small>Бафер</small></span></button><button class="class-card" data-class="Warcryer" data-short="WC"><b>WC</b><span>Warcryer<small>Бафер</small></span></button><button class="class-card" data-class="Overlord" data-short="OL"><b>Over</b><span>Overlord<small>Клановый бафер / дебафер</small></span></button><button class="class-card" data-class="Swordsinger" data-short="SWS"><b>SWS</b><span>Swordsinger<small>Песни</small></span></button><button class="class-card" data-class="Bladedancer" data-short="BD"><b>BD</b><span>Bladedancer<small>Танцы</small></span></button></div>
             <div class="class-column"><label>ФИЗИЧЕСКИЕ ДД · 12</label><button class="class-card" data-class="Gladiator" data-short="Glad"><b>Glad</b><span>Gladiator<small>Мили ДД</small></span></button><button class="class-card" data-class="Warlord" data-short="WL"><b>WL</b><span>Warlord<small>Пика / AOE</small></span></button><button class="class-card" data-class="Treasure Hunter" data-short="TH"><b>TH</b><span>Treasure Hunter<small>Даггер</small></span></button><button class="class-card" data-class="Plains Walker" data-short="PW"><b>PW</b><span>Plains Walker<small>Даггер</small></span></button><button class="class-card" data-class="Abyss Walker" data-short="AW"><b>AW</b><span>Abyss Walker<small>Даггер</small></span></button><button class="class-card" data-class="Hawkeye" data-short="HE"><b>HE</b><span>Hawkeye<small>Лучник</small></span></button><button class="class-card" data-class="Silver Ranger" data-short="SR"><b>SR</b><span>Silver Ranger<small>Лучник</small></span></button><button class="class-card" data-class="Phantom Ranger" data-short="PR"><b>PR</b><span>Phantom Ranger<small>Лучник</small></span></button><button class="class-card" data-class="Destroyer" data-short="Destro"><b>Destro</b><span>Destroyer<small>Мили ДД</small></span></button><button class="class-card" data-class="Tyrant" data-short="Tyr"><b>Tyr</b><span>Tyrant<small>Мили ДД</small></span></button><button class="class-card" data-class="Bounty Hunter" data-short="BH"><b>BH</b><span>Bounty Hunter<small>Спойлер / физ. ДД</small></span></button><button class="class-card" data-class="Warsmith" data-short="Craft"><b>Craft</b><span>Warsmith<small>Крафтер / физ. ДД</small></span></button></div>
             <div class="class-column"><label>МАГИ · 4</label><button class="class-card" data-class="Sorcerer" data-short="Sorc"><b>Sorc</b><span>Sorcerer<small>Огненный маг</small></span></button><button class="class-card" data-class="Spellsinger" data-short="SPS"><b>SPS</b><span>Spellsinger<small>Водный маг</small></span></button><button class="class-card" data-class="Spellhowler" data-short="SH"><b>SH</b><span>Spellhowler<small>Ветряной маг</small></span></button><button class="class-card" data-class="Necromancer" data-short="Necro"><b>Necro</b><span>Necromancer<small>Маг / дебафер</small></span></button><label class="sub-label">САММОНЕРЫ · 3</label><button class="class-card" data-class="Warlock" data-short="Cat"><b>Cat</b><span>Warlock<small>Котовод</small></span></button><button class="class-card" data-class="Elemental Summoner" data-short="ES"><b>ES</b><span>Elemental Summoner<small>Саммонер</small></span></button><button class="class-card" data-class="Phantom Summoner" data-short="PS"><b>PS</b><span>Phantom Summoner<small>Саммонер</small></span></button></div>
           </div>
       </section>
 
       <section class="workspace schedule-section">
-        <div class="section-heading"><span class="step">02</span><div><p class="eyebrow">ТВОЙ ОНЛАЙН</p><h2>Когда ты выходишь в Aden?</h2></div><span class="line"></span></div>
-        <div class="schedule-top"><p>Все 7 дней уже включены. Зажми ЛКМ и проведи по часам, когда ты можешь играть.</p><div class="schedule-legend"><span><i class="legend-on"></i> могу играть</span><span><i class="legend-off"></i> не уверен</span></div></div>
+        <div class="section-heading"><span class="step">02</span><div><h2>Когда ты выходишь в Aden?</h2></div></div>
+        <div class="schedule-top"><p>Зажми ЛКМ и проведи по часам, когда ты можешь играть.</p><div class="schedule-legend"><span><i class="legend-on"></i> могу играть</span><span><i class="legend-off"></i> не уверен</span></div></div>
         <div class="schedule-wrap">
           <div class="time-labels"><span>ВРЕМЯ</span><div id="timeLabels"></div></div>
           <div id="scheduleGrid" class="schedule-grid"></div>
         </div>
         <div class="schedule-footer"><span><b id="selectedHours">0</b> часов отмечено в неделю</span><span>Твоё местное время: <b data-user-time-zone></b></span></div>
-        <button class="find-button" id="findButton"><span>НАЙТИ ДОСТУПНЫЕ ПАТИ</span><b>→</b></button>
+        <button class="find-button" id="findButton"><span>НАЙТИ ДОСТУПНЫЕ ПАТИ</span><svg class="party-button-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 10h12M10 4.5l5.5 5.5-5.5 5.5"/></svg></button>
       </section>
 
       <section class="results workspace" id="results" hidden>
-        <div class="section-heading"><span class="step">03</span><div><p class="eyebrow">РЕЗУЛЬТАТЫ ПОИСКА</p><h2>Пати, которым не хватает тебя</h2></div><span class="line"></span></div>
+        <div class="section-heading"><span class="step">03</span><div><h2>Пати, которым не хватает тебя</h2></div></div>
         <div class="results-bar"><p id="resultSummary"></p><button id="editSearch">← ИЗМЕНИТЬ ПОИСК</button></div>
         <div class="find-contacts-panel"><div class="find-contacts-copy"><p class="eyebrow">ТВОИ КОНТАКТЫ</p><h3>Как с тобой связаться?</h3><p>Укажи хотя бы один вариант. Он сохранится в этом браузере и будет передан лидеру только после подачи заявки.</p></div><div class="find-contacts-fields"><div class="application-contact-grid"><label><span>Telegram <img class="application-contact-icon" src="../assets/icons/telegram.svg" alt="" aria-hidden="true" /></span><input id="findTelegram" type="text" maxlength="64" placeholder="@username" autocomplete="off" spellcheck="false" /></label><label><span>Discord <img class="application-contact-icon" src="../assets/icons/discord.svg" alt="" aria-hidden="true" /></span><input id="findDiscord" type="text" maxlength="64" placeholder="username" autocomplete="off" spellcheck="false" /></label></div><p id="findContactHint" class="find-contact-hint" aria-live="polite">Можно заполнить сейчас или при первой заявке.</p></div></div>
         <div id="partyResults" class="party-results"></div>
       </section>
 
-      <section class="workspace application-workspace" id="myApplications" aria-labelledby="myApplicationsTitle"><div class="section-heading"><span class="step">04</span><div><p class="eyebrow">ТВОИ ОТКЛИКИ</p><h2 id="myApplicationsTitle">Мои заявки</h2></div><span class="line"></span></div><p class="application-section-lead">Можно обратиться в несколько пати одновременно. Здесь видны ответы лидеров, контакты и возможность отозвать заявку.</p><div id="myApplicationsList" class="application-list" aria-live="polite"></div></section>
+      <section class="workspace application-workspace" id="myApplications" aria-labelledby="myApplicationsTitle"><div class="section-heading"><span class="step">04</span><div><h2 id="myApplicationsTitle">Мои заявки</h2></div></div><p class="application-section-lead">Можно обратиться в несколько пати одновременно. Здесь видны ответы лидеров, контакты и возможность отозвать заявку.</p><div id="myApplicationsList" class="application-list" aria-live="polite"></div><button type="button" class="application-secondary-button" data-load-history hidden>ПОКАЗАТЬ БОЛЕЕ РАННИЕ ЗАЯВКИ</button></section>
 
       <section class="how" id="how-it-works"><div class="how-card"><p class="eyebrow">ПРОСТОЙ ПРИНЦИП</p><h2>Девять ролей.<br /><em>Одна команда.</em></h2><p>Мы не подбираем случайных игроков. Сервис ищет живые группы, где уже есть место твоему классу, а их расписание полностью помещается в твоё.</p><div class="how-steps"><span><b>01</b> Выбери сервер и укажи персонажа</span><span><b>02</b> Отметь часы</span><span><b>03</b> Оставь заявку</span></div></div></section>
+      <footer class="cabinet-page-footer"><span>© 2026 Elmorelab · Локальный прототип Party Finder</span><div><a href="https://profile.elmorelab.com/ru/term" target="_blank" rel="noreferrer">Пользовательское соглашение</a><a href="https://profile.elmorelab.com/ru/privacy" target="_blank" rel="noreferrer">Политика конфиденциальности</a></div></footer>
     </main>
     <footer class="footer official-footer">
       <div class="footer__container _container">
@@ -194,10 +222,12 @@
       <p class="footer-copyrights">© это эмулятор MMORPG, работающий исключительно в информационных целях.</p>
       <p class="footer-copyrights">LLC 'Taganay Group'<br />Registration Number: 307582-3301-LLC<br />Registered Address: 156/2 7 April Street, Oktyabrsky District, Bishkek, Kyrgyz Republic</p>
     </footer>
-    <script src="../shell-loader.js?v=party-create-2"></script>
+    <script src="../shell-loader.js?v=cabinet-1"></script>
     <script src="../assets/elmorelab/app.min.js" defer></script>
     <script src="../assets/vendor/tom-select/tom-select.complete.min.js"></script>
-    <script src="../app.js?v=party-controls-1"></script>
-    <script src="../applications.js?v=party-controls-1"></script>
+    <script src="../party-api.js?v=timezone-spam-1"></script>
+    <script src="../app.js?v=timezone-spam-1"></script>
+    <script src="../applications.js?v=timezone-spam-1"></script>
+    <script src="../cabinet.js?v=cabinet-3"></script>
   </body>
 </html>

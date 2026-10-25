@@ -5,55 +5,67 @@ const partyApp = document.querySelector('.party-app');
 const modeChooser = document.querySelector('#modeChooser');
 const createParty = document.querySelector('#createParty');
 const loginOverlay = document.querySelector('#loginOverlay');
-const loginForm = document.querySelector('#loginForm');
-const loginEmail = document.querySelector('#loginEmail');
-const loginPassword = document.querySelector('#loginPassword');
-const loginError = document.querySelector('#loginError');
 const demoLogout = document.querySelector('#demoLogout');
 const finderSections = [...document.querySelectorAll('#finder, .party-app > .workspace, #how-it-works')];
-const authKey = 'partyFinder.demoSession.v3';
-const demoEmail = 'demo@party.local';
-const demoPassword = 'Party2026!';
+const authKey = 'partyFinder.access.v1';
+const guestPausedKey = 'partyFinder.guestPaused.v1';
 let pendingMode = null;
 let lastModeTrigger = null;
 function currentAccess() { return sessionStorage.getItem(authKey); }
 function isGuest() { return currentAccess() === 'guest'; }
 function hasLocalAccess() { return ['demo', 'guest'].includes(currentAccess()); }
+function isCabinetView() { return currentAccess() === 'demo'; }
+function syncAccessShell() {
+  document.body.classList.toggle('cabinet-view', isCabinetView());
+  document.body.classList.toggle('cabinet-theme', isCabinetView());
+  document.body.classList.toggle('dark-only', isCabinetView());
+  document.querySelectorAll('[data-profile-style]').forEach(link => { link.media = isCabinetView() ? 'all' : 'not all'; });
+  document.querySelector('#cabinetShell').hidden = !isCabinetView();
+}
+syncAccessShell();
 
 function updateModeUrl(mode) {
   const url = new URL(window.location.href);
   if (mode) url.searchParams.set('mode', mode);
   else url.searchParams.delete('mode');
+  url.searchParams.delete('section');
+  if (isCabinetView()) url.searchParams.set('view', 'cabinet');
+  else url.searchParams.delete('view');
   window.history.pushState({mode}, '', url);
 }
 
 function closeLogin() {
   loginOverlay.hidden = true;
   document.body.classList.remove('login-open');
-  loginForm.reset();
-  loginError.hidden = true;
   lastModeTrigger?.focus();
 }
 
 function showModeChooser(updateUrl = true) {
   closeLogin();
+  syncAccessShell();
   demoLogout.hidden = !hasLocalAccess();
-  demoLogout.textContent = isGuest() ? 'ВЫЙТИ ИЗ ГОСТЕВОГО РЕЖИМА' : 'ВЫЙТИ ИЗ ТЕСТОВОГО АККАУНТА';
+  demoLogout.textContent = isGuest() ? 'ВЫЙТИ ИЗ ГОСТЕВОГО РЕЖИМА' : 'ВЫЙТИ';
   partyApp.classList.remove('mode-find', 'mode-create');
   partyApp.classList.add('mode-select');
-  modeChooser.hidden = false;
+  modeChooser.hidden = isCabinetView();
+  document.querySelector('#cabinetDashboard').hidden = !isCabinetView();
   createParty.hidden = true;
   document.querySelector('#finderBack').hidden = true;
   finderSections.forEach(section => { section.hidden = true; });
   if (updateUrl) updateModeUrl(null);
   window.scrollTo(0, 0);
+  document.dispatchEvent(new CustomEvent('partyfinder:mode-changed', {detail:{mode:'home'}}));
 }
 
 function showSelectedMode(mode, updateUrl = true) {
   closeLogin();
+  syncAccessShell();
+  demoLogout.hidden = !hasLocalAccess();
+  demoLogout.textContent = isGuest() ? 'ВЫЙТИ ИЗ ГОСТЕВОГО РЕЖИМА' : 'ВЫЙТИ';
   partyApp.classList.remove('mode-select', 'mode-find', 'mode-create');
   partyApp.classList.add(`mode-${mode}`);
   modeChooser.hidden = true;
+  document.querySelector('#cabinetDashboard').hidden = true;
   createParty.hidden = mode !== 'create';
   document.querySelector('#finderBack').hidden = mode !== 'find';
   finderSections.forEach(section => {
@@ -76,44 +88,37 @@ function selectMode(mode, trigger) {
     : 'Войди, чтобы открыть набор игроков в свою пати.';
   loginOverlay.hidden = false;
   document.body.classList.add('login-open');
-  loginEmail.focus();
+  document.querySelector('#loginClose').focus();
 }
 
 document.querySelector('#findMode').addEventListener('click', event => selectMode('find', event.currentTarget));
 document.querySelector('#createMode').addEventListener('click', event => selectMode('create', event.currentTarget));
 document.querySelector('#backToModes').addEventListener('click', () => showModeChooser());
 document.querySelector('#finderBack').addEventListener('click', () => showModeChooser());
-demoLogout.addEventListener('click', () => {
+async function leaveLocalAccess() {
+  sessionStorage.setItem(guestPausedKey, '1');
   sessionStorage.removeItem(authKey);
-  showModeChooser();
-  window.location.reload();
-});
+  const url = new URL(window.location.href);
+  url.searchParams.delete('view');
+  url.searchParams.delete('mode');
+  window.location.replace(url);
+}
+demoLogout.addEventListener('click', leaveLocalAccess);
 document.querySelector('#loginClose').addEventListener('click', closeLogin);
 document.querySelector('#loginBackdrop').addEventListener('click', closeLogin);
-document.querySelector('#fillDemoLogin').addEventListener('click', () => {
-  loginEmail.value = demoEmail;
-  loginPassword.value = demoPassword;
-  loginError.hidden = true;
-  loginPassword.focus();
-});
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !loginOverlay.hidden) closeLogin();
 });
-loginForm.addEventListener('submit', event => {
+document.querySelector('#continueAsGuest').addEventListener('click', async event => {
   event.preventDefault();
-  if (loginEmail.value.trim().toLowerCase() !== demoEmail || loginPassword.value !== demoPassword) {
-    loginError.hidden = false;
-    loginPassword.focus();
-    return;
-  }
-  sessionStorage.setItem(authKey, 'demo');
-  showSelectedMode(pendingMode || 'find');
-  window.location.reload();
-});
-document.querySelector('#continueAsGuest').addEventListener('click', () => {
+  try { await partyApi('/session/guest', {method:'POST', body:{}}); }
+  catch { return; }
+  sessionStorage.removeItem(guestPausedKey);
   sessionStorage.setItem(authKey, 'guest');
-  showSelectedMode(pendingMode || 'find');
-  window.location.reload();
+  const url = new URL(window.location.href);
+  url.searchParams.delete('view');
+  url.searchParams.set('mode', pendingMode || 'find');
+  window.location.assign(url);
 });
 const initialMode = new URL(window.location.href).searchParams.get('mode');
 if (hasLocalAccess() && ['find', 'create'].includes(initialMode)) {
@@ -121,6 +126,17 @@ if (hasLocalAccess() && ['find', 'create'].includes(initialMode)) {
 } else {
   showModeChooser(false);
   if (['find', 'create'].includes(initialMode)) selectMode(initialMode, document.querySelector(initialMode === 'find' ? '#findMode' : '#createMode'));
+}
+if (!hasLocalAccess() && !sessionStorage.getItem(guestPausedKey)) {
+  partyApi('/session').then(session => {
+    if (!session.returningGuest || hasLocalAccess()) return;
+    sessionStorage.setItem(authKey, 'guest');
+    syncAccessFields();
+    if (['find', 'create'].includes(initialMode)) showSelectedMode(initialMode, false);
+    else showModeChooser(false);
+    if (document.readyState === 'complete') loadPartyState();
+    else window.addEventListener('load', () => loadPartyState(), {once:true});
+  }).catch(() => { /* The chooser remains usable if the local API is offline. */ });
 }
 window.addEventListener('popstate', () => {
   const mode = new URL(window.location.href).searchParams.get('mode');
@@ -130,10 +146,13 @@ window.addEventListener('popstate', () => {
 
 const createDayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-const demoScheduleTimeZone = 'Europe/Madrid';
+const defaultTimeZone = 'Europe/Kyiv';
 const userTimeZone = (() => {
-  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; }
-  catch { return 'UTC'; }
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || defaultTimeZone;
+    new Intl.DateTimeFormat('en', {timeZone:zone});
+    return zone;
+  } catch { return defaultTimeZone; }
 })();
 const zonedPartsFormatters = new Map();
 function zonedParts(date, timeZone) {
@@ -147,7 +166,10 @@ function zonedParts(date, timeZone) {
 function timeZoneDisplayLabel(timeZone) {
   return `${timeZone} · местное время`;
 }
+const wallTimeCache = new Map();
 function zonedWallTimeToDate(year, month, day, hour, timeZone) {
+  const cacheKey = `${year}:${month}:${day}:${hour}:${timeZone}`;
+  if (wallTimeCache.has(cacheKey)) return new Date(wallTimeCache.get(cacheKey));
   const wanted = Date.UTC(year, month - 1, day, hour);
   let timestamp = wanted;
   for (let attempt = 0; attempt < 4; attempt++) {
@@ -157,6 +179,14 @@ function zonedWallTimeToDate(year, month, day, hour, timeZone) {
     timestamp += adjustment;
     if (!adjustment) break;
   }
+  // A repeated wall-clock hour starts at its first occurrence, as on the API.
+  for (let candidate = timestamp - 3 * 3600000; candidate <= timestamp + 3 * 3600000; candidate += 15 * 60000) {
+    const parts = zonedParts(new Date(candidate), timeZone);
+    const observed = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute));
+    if (observed === wanted) { timestamp = candidate; break; }
+  }
+  if (wallTimeCache.size >= 512) wallTimeCache.clear();
+  wallTimeCache.set(cacheKey, timestamp);
   return new Date(timestamp);
 }
 function localWeekStartDate() {
@@ -171,15 +201,23 @@ function partyLocalSlots(party) {
   const slots = new Set();
   for (let sourceDay = 0; sourceDay < 7; sourceDay++) {
     const sourceDate = new Date(Date.UTC(monday.year, monday.month - 1, monday.day + sourceDay));
-    for (const hour of party.hours) {
-      const instant = zonedWallTimeToDate(sourceDate.getUTCFullYear(), sourceDate.getUTCMonth() + 1, sourceDate.getUTCDate(), hour, party.timeZone || demoScheduleTimeZone);
-      const local = zonedParts(instant, userTimeZone);
-      const localDate = Date.UTC(Number(local.year), Number(local.month) - 1, Number(local.day));
-      const dayIndex = ((Math.round((localDate - monday.timestamp) / 86400000) % 7) + 7) % 7;
-      slots.add(`${dayIndex}:${Number(local.hour)}`);
+    for (const hour of party.weeklyAvailability?.[sourceDay] || party.hours || []) {
+      const zone = party.timeZone || defaultTimeZone;
+      const start = zonedWallTimeToDate(sourceDate.getUTCFullYear(), sourceDate.getUTCMonth() + 1, sourceDate.getUTCDate(), hour, zone);
+      const end = zonedWallTimeToDate(sourceDate.getUTCFullYear(), sourceDate.getUTCMonth() + 1, sourceDate.getUTCDate(), hour + 1, zone);
+      for (let stamp = start.getTime(); stamp < end.getTime(); stamp += 60000) {
+        const local = zonedParts(new Date(stamp), userTimeZone);
+        const localDate = Date.UTC(Number(local.year), Number(local.month) - 1, Number(local.day));
+        const dayIndex = ((Math.round((localDate - monday.timestamp) / 86400000) % 7) + 7) % 7;
+        slots.add(`${dayIndex}:${Number(local.hour) * 60 + Number(local.minute)}`);
+      }
     }
   }
   return slots;
+}
+function formatMinute(value) {
+  const minute = ((value % 1440) + 1440) % 1440;
+  return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
 }
 function describeWeeklySlots(slots) {
   const byDay = Array.from({length:7}, () => new Set());
@@ -192,9 +230,9 @@ function describeWeeklySlots(slots) {
     let start = ordered[0], end = start;
     ordered.slice(1).forEach(hour => {
       if (hour === end + 1) end = hour;
-      else { ranges.push(`${String(start).padStart(2,'0')}:00–${String((end + 1) % 24).padStart(2,'0')}:00`); start = end = hour; }
+      else { ranges.push(`${formatMinute(start)}–${formatMinute(end + 1)}`); start = end = hour; }
     });
-    ranges.push(`${String(start).padStart(2,'0')}:00–${String((end + 1) % 24).padStart(2,'0')}:00`);
+    ranges.push(`${formatMinute(start)}–${formatMinute(end + 1)}`);
     const key = ranges.join(', ');
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(day);
@@ -214,6 +252,7 @@ document.querySelectorAll('[data-user-time-zone]').forEach(element => { element.
 const classCards = [...document.querySelectorAll('.class-card')];
 const classNames = classCards.map(card => card.dataset.class);
 const classCodeByName = new Map(classCards.map(card => [card.dataset.class, card.dataset.short]));
+const classDisplayCode = code => code === 'OL' ? 'Over' : code;
 const servers = [
   {id:'bartz', name:'Bartz', rate:'x3', chronicle:'Hellbound'},
   {id:'teon', name:'Teon', rate:'x1', chronicle:'Hellbound'},
@@ -227,27 +266,11 @@ function guestCharacter(prefix) {
   const className = document.querySelector(`#${prefix}GuestClass`).value;
   const level = Number(document.querySelector(`#${prefix}GuestLevel`).value);
   if (!selectedServerId || !name || !className || !Number.isInteger(level) || level < 1 || level > 80) return null;
-  return {id:`guest:${selectedServerId}:${name.toLowerCase()}:${className}`, serverId:selectedServerId, name, className, level};
+  return {id:`guest:${selectedServerId}:${name.toLowerCase()}`, serverId:selectedServerId, name, className, level};
 }
 // Demo account data. Replace this source with the authenticated profile API later.
-const demoCharacters = [
-  {id:'char-101', serverId:'bartz', name:'Kain', className:'Warcryer', level:78},
-  {id:'char-102', serverId:'bartz', name:'Mirael', className:'Paladin', level:76},
-  {id:'char-103', serverId:'bartz', name:'Elyria', className:'Bishop', level:74},
-  {id:'char-104', serverId:'bartz', name:'Ardent', className:'Gladiator', level:79},
-  {id:'char-105', serverId:'bartz', name:'Lunara', className:'Spellsinger', level:77},
-  {id:'char-201', serverId:'teon', name:'Rhett', className:'Dark Avenger', level:72},
-  {id:'char-202', serverId:'teon', name:'Serena', className:'Elven Elder', level:73},
-  {id:'char-203', serverId:'teon', name:'Torvik', className:'Destroyer', level:75},
-  {id:'char-204', serverId:'teon', name:'Shade', className:'Treasure Hunter', level:74},
-  {id:'char-205', serverId:'teon', name:'Aether', className:'Sorcerer', level:76},
-  {id:'char-301', serverId:'erica', name:'Selene', className:'Shillien Elder', level:74},
-  {id:'char-302', serverId:'erica', name:'Varyn', className:'Warlord', level:77},
-  {id:'char-303', serverId:'erica', name:'Neris', className:'Necromancer', level:76},
-  {id:'char-304', serverId:'erica', name:'Lyra', className:'Swordsinger', level:75},
-  {id:'char-305', serverId:'erica', name:'Morrin', className:'Phantom Summoner', level:73}
-];
-const charactersById = new Map(demoCharacters.map(character => [character.id, character]));
+const profileCharacters = []; // Filled by the verified profile integration.
+const charactersById = new Map(profileCharacters.map(character => [character.id, character]));
 function selectedLeaderCharacter() { return isGuest() ? guestCharacter('leader') : charactersById.get(leaderCharacterSelect.value); }
 function selectedFindCharacter() { return isGuest() ? guestCharacter('find') : charactersById.get(findCharacterSelect.value); }
 function focusGuestCharacter(prefix) {
@@ -262,6 +285,12 @@ const memberList = document.querySelector('#memberList');
 const vacancyList = document.querySelector('#vacancyList');
 const rosterCount = document.querySelector('#rosterCount');
 const createFormError = document.querySelector('#createFormError');
+function showCreateFormError(message, field) {
+  createFormError.textContent = message;
+  createFormError.hidden = false;
+  createFormError.scrollIntoView({behavior:'smooth', block:'center'});
+  if (field) field.setAttribute('aria-invalid', 'true');
+}
 function vacanciesWord(count) {
   if (count % 10 === 1 && count % 100 !== 11) return 'вакансия';
   if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'вакансии';
@@ -271,7 +300,7 @@ function populateCharacterSelect(select) {
   if (select.tomselect) select.tomselect.destroy();
   select.replaceChildren(new Option(selectedServerId ? 'Выбери персонажа' : 'Сначала выбери сервер', ''));
   select.disabled = !selectedServerId;
-  demoCharacters.filter(character => character.serverId === selectedServerId).forEach(character => {
+  profileCharacters.filter(character => character.serverId === selectedServerId).forEach(character => {
     select.add(new Option(`${character.name} · ${character.className} · ${character.level} ур.`, character.id));
   });
   if (selectedServerId) {
@@ -279,7 +308,7 @@ function populateCharacterSelect(select) {
     new TomSelect(select, {
       create: false,
       maxItems: 1,
-      maxOptions: demoCharacters.length,
+      maxOptions: profileCharacters.length,
       closeAfterSelect: true,
       onItemAdd() { requestAnimationFrame(() => this.blur()); },
       searchField: searchable ? ['text'] : [],
@@ -307,6 +336,7 @@ function chooseServer(serverId) {
   updateFindCharacter();
   document.querySelector('#results').hidden = true;
   document.querySelector('#createdPreview').hidden = true;
+  document.dispatchEvent(new CustomEvent('partyfinder:server-changed', { detail: { serverId } }));
 }
 for (const container of document.querySelectorAll('.server-options')) {
   servers.forEach(server => {
@@ -351,8 +381,8 @@ function enhanceClassSelect(select) {
     create: false,
     maxItems: 1,
     maxOptions: classNames.length + 1,
-    closeAfterSelect: guestClass,
-    ...(guestClass ? {onItemAdd() { requestAnimationFrame(() => this.blur()); }} : {}),
+    closeAfterSelect: true,
+    onItemAdd() { requestAnimationFrame(() => { this.close(); this.blur(); }); },
     searchField: ['text'],
     placeholder: select.dataset.anyAllowed === 'true' ? 'Любой класс · введи для поиска' : 'Введи или выбери класс',
     render: {
@@ -403,19 +433,22 @@ function labeledRosterInput(label, input) {
   wrapper.append(caption, input);
   return wrapper;
 }
+let displayedListing = null;
 function updateRoster() {
   const memberRows = [...memberList.children];
   const members = memberRows.filter(row => row.querySelector('.roster-class-select').value || row.querySelector('.member-name').value.trim()).length;
   const vacancies = vacancyList.children.length;
+  const accepted = (displayedListing?.acceptedMembers || []).length;
+  const openVacancies = Math.max(0, vacancies - accepted);
   const remaining = 8 - members - vacancies;
   const allocatedRows = memberRows.length + vacancies;
   document.querySelector('#addMember').disabled = allocatedRows >= 8;
   document.querySelector('#addMemberAtEnd').disabled = allocatedRows >= 8;
   document.querySelector('#addVacancy').disabled = allocatedRows >= 8;
   document.querySelector('#addVacancyAtEnd').disabled = allocatedRows >= 8;
-  document.querySelector('#openSlotCount').textContent = vacancies;
-  document.querySelector('#openSlotLabel').textContent = `${vacanciesWord(vacancies)} для набора`;
-  rosterCount.textContent = `В пати ${members + 1} / 9 · ищем ${vacancies} · ещё не распределено ${remaining}`;
+  document.querySelector('#openSlotCount').textContent = openVacancies;
+  document.querySelector('#openSlotLabel').textContent = `${vacanciesWord(openVacancies)} для набора`;
+  rosterCount.textContent = `В пати ${members + accepted + 1} / 9 · ищем ${openVacancies} · ещё не распределено ${remaining}`;
   [...memberList.children, ...vacancyList.children].forEach((row, index) => {
     row.querySelector('.create-slot-number').textContent = String(index + 2).padStart(2, '0');
   });
@@ -573,11 +606,93 @@ function describeCreateSchedule() {
     return `${dayRanges.join(', ')} ${hours}`;
   });
 }
-document.querySelector('#createPartyForm').addEventListener('submit', event => {
+function renderOwnedListingState(listing, applications = submittedApplications) {
+  displayedListing = listing;
+  const accepted = listing?.acceptedMembers || [];
+  const acceptedByIndex = new Map(accepted.map(member => [member.vacancyIndex, member]));
+  const acceptedList = document.querySelector('#acceptedMemberList');
+  acceptedList.replaceChildren();
+  accepted.forEach(member => {
+    const application = applications.find(item => item.partyId === listing.id && item.status === 'accepted' && item.acceptedSlot === member.vacancyIndex);
+    const row = document.createElement('div');
+    row.className = 'leader-row accepted-member-row';
+    const number = document.createElement('span');
+    number.className = 'create-slot-number';
+    number.textContent = String(listing.vacancies[member.vacancyIndex]?.slotNumber || '').padStart(2, '0');
+    const name = document.createElement('span');
+    name.textContent = `${member.name} · ${member.className}`;
+    const status = document.createElement('strong');
+    status.textContent = `Принят · ${member.level} ур.`;
+    const remove = document.createElement('button');
+    remove.className = 'roster-remove accepted-member-remove';
+    remove.type = 'button';
+    remove.textContent = '×';
+    remove.disabled = !application;
+    remove.dataset.removeAccepted = application?.id || '';
+    remove.setAttribute('aria-label', `Исключить ${member.name} из пати`);
+    const confirmation = document.createElement('div');
+    confirmation.className = 'accepted-member-confirm';
+    confirmation.hidden = true;
+    const message = document.createElement('span');
+    message.textContent = `Исключить ${member.name}? Место снова откроется для заявок.`;
+    const confirm = document.createElement('button');
+    confirm.type = 'button';
+    confirm.dataset.confirmAccepted = application?.id || '';
+    confirm.textContent = 'ИСКЛЮЧИТЬ';
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.dataset.cancelAccepted = '';
+    cancel.textContent = 'ОТМЕНА';
+    confirmation.append(message, confirm, cancel);
+    row.append(number, name, status, remove, confirmation);
+    acceptedList.appendChild(row);
+  });
+  acceptedList.hidden = !accepted.length;
+  if (listing && listing.vacancies.length === vacancyList.children.length) {
+    [...vacancyList.children].forEach((row, index) => { row.hidden = acceptedByIndex.has(index); });
+  }
+  updateRoster();
+
+  const preview = document.querySelector('#createdPreview');
+  preview.replaceChildren();
+  if (!listing) { preview.hidden = true; return; }
+  const eyebrow = document.createElement('p'); eyebrow.className = 'eyebrow'; eyebrow.textContent = 'ТВОЁ ОБЪЯВЛЕНИЕ';
+  const title = document.createElement('h3'); title.textContent = listing.name;
+  const summary = document.createElement('p');
+  const openCount = listing.vacancies.length - accepted.length;
+  summary.textContent = `${servers.find(server => server.id === listing.serverId)?.name || listing.serverId} · ${listing.members.length + accepted.length + 1} в пати · ${openCount} ${vacanciesWord(openCount)} · ${listing.weeklyAvailability.flat().length} ч/нед. · лидер: ${listing.leaderName} (${listing.leaderClass})`;
+  const expiry = document.createElement('p'); expiry.className = 'created-preview-expiry'; expiry.hidden = true;
+  const countdown = document.createElement('strong'); countdown.dataset.listingCountdown = ''; expiry.append('Активно ещё ', countdown);
+  const schedule = document.createElement('p'); schedule.className = 'created-preview-schedule';
+  schedule.textContent = `${describeWeeklySlots(partyLocalSlots(listing)).join(' · ')} · ${timeZoneDisplayLabel(userTimeZone)}`;
+  const slots = document.createElement('div'); slots.className = 'created-preview-slots';
+  const slotEntries = new Map([[1, {label:`Ты · ${listing.leaderName} · ${listing.leaderClass}`, kind:'occupied'}]]);
+  listing.members.forEach(member => slotEntries.set(member.slotNumber, {label:`${member.className}${member.name ? ` · ${member.name}` : ''}`, kind:'occupied'}));
+  listing.vacancies.forEach((vacancy, index) => {
+    const member = acceptedByIndex.get(index);
+    slotEntries.set(vacancy.slotNumber, member
+      ? {label:`${member.name} · ${member.className} · ${member.level} ур.`, kind:'accepted'}
+      : {label:`${vacancy.className || 'Любой класс'} · ${vacancy.minLevel}–${vacancy.maxLevel} ур.`, kind:'open'});
+  });
+  for (let slotNumber = 1; slotNumber <= 9; slotNumber++) {
+    const entry = slotEntries.get(slotNumber) || {label:'Не распределено', kind:'empty'};
+    const slot = document.createElement('span');
+    slot.className = `preview-slot-${entry.kind}`;
+    slot.textContent = `${String(slotNumber).padStart(2, '0')} ${entry.label}`;
+    slots.appendChild(slot);
+  }
+  preview.append(eyebrow, title, summary, expiry, schedule, slots);
+  preview.hidden = false;
+  updateListingCountdown();
+}
+document.querySelector('#createPartyForm').addEventListener('submit', async event => {
   event.preventDefault();
-  if (!selectedServerId) { document.querySelector('#createServerOptions .server-option').focus(); return; }
+  if (!selectedServerId) { showCreateFormError('Выбери сервер, на котором играет твоя пати.'); return; }
+  const partyName = document.querySelector('#partyName');
+  if (!partyName.value.trim()) { showCreateFormError('Укажи название пати.', partyName); return; }
+  partyName.removeAttribute('aria-invalid');
   const leader = selectedLeaderCharacter();
-  if (!leader) { if (isGuest()) focusGuestCharacter('leader'); else (leaderCharacterSelect.tomselect?.control_input || leaderCharacterSelect).focus(); return; }
+  if (!leader) { showCreateFormError(isGuest() ? 'Укажи имя, класс и уровень своего персонажа.' : 'Выбери персонажа на этом сервере.'); return; }
   const leaderTelegram = document.querySelector('#leaderTelegram');
   const leaderDiscord = document.querySelector('#leaderDiscord');
   const leaderContactError = document.querySelector('#leaderContactError');
@@ -594,62 +709,33 @@ document.querySelector('#createPartyForm').addEventListener('submit', event => {
   leaderDiscord.removeAttribute('aria-invalid');
   const selectedHours = createAvailability.reduce((total, set) => total + set.size, 0);
   if (!selectedHours) {
-    createFormError.textContent = 'Отметь хотя бы один час игры в недельной сетке.';
-    createFormError.hidden = false;
-    createGrid.querySelector('.create-hour').focus();
+    showCreateFormError('Отметь хотя бы один час игры в недельной сетке.');
     return;
   }
   if (!vacancyList.children.length) {
-    createFormError.textContent = 'Добавь хотя бы одну вакансию для поиска игроков.';
-    createFormError.hidden = false;
-    document.querySelector('#addVacancy').focus();
+    showCreateFormError('Добавь хотя бы одну вакансию для поиска игроков.');
     return;
   }
   for (const row of memberList.children) {
     if (!row.querySelector('select').value && !row.querySelector('.member-name').value.trim()) continue;
     if (row.querySelector('select').value) continue;
-    createFormError.textContent = 'Выбери класс для каждого игрока, который уже в пати.';
-    createFormError.hidden = false;
-    row.querySelector('.ts-control input').focus();
+    showCreateFormError('Выбери класс для каждого игрока, который уже в пати.');
     return;
   }
   for (const row of vacancyList.children) {
     const min = row.querySelector('.level-min');
     const max = row.querySelector('.level-max');
-    if (Number(max.value) < Number(min.value)) { max.focus(); return; }
+    if (Number(max.value) < Number(min.value)) { showCreateFormError('Минимальный уровень вакансии не может быть выше максимального.'); return; }
   }
+  const submitButton = document.querySelector('#createPartyForm button[type="submit"]');
+  submitButton.disabled = true;
+  let saved;
+  try { saved = await publishListing(); }
+  finally { submitButton.disabled = false; }
+  if (!saved) return;
   createFormError.hidden = true;
-  const preview = document.querySelector('#createdPreview');
-  preview.replaceChildren();
-  const eyebrow = document.createElement('p');
-  eyebrow.className = 'eyebrow';
-  eyebrow.textContent = 'ПРЕДПРОСМОТР ОБЪЯВЛЕНИЯ';
-  const title = document.createElement('h3');
-  title.textContent = document.querySelector('#partyName').value.trim();
-  const summary = document.createElement('p');
-  const activeMemberRows = [...memberList.children].filter(row => row.querySelector('.roster-class-select').value || row.querySelector('.member-name').value.trim());
-  summary.textContent = `${servers.find(server => server.id === selectedServerId).name} · ${activeMemberRows.length + 1} в пати · ${vacancyList.children.length} ${vacanciesWord(vacancyList.children.length)} · ${selectedHours} ч/нед. · лидер: ${leader.name} (${leader.className})`;
-  const schedule = document.createElement('p'); schedule.className = 'created-preview-schedule'; schedule.textContent = `${describeCreateSchedule().join(' · ')} · ${timeZoneDisplayLabel(userTimeZone)}`;
-  const slots = document.createElement('div');
-  slots.className = 'created-preview-slots';
-  const slotNames = [
-    {label: `Ты · ${leader.name} · ${leader.className}`, kind:'occupied'},
-    ...activeMemberRows.map(row => { const name = row.querySelector('.member-name'); return {label:`${row.querySelector('select').value}${name.value.trim() ? ` · ${name.value.trim()}` : ''}`, kind:'occupied'}; }),
-    ...[...vacancyList.children].map(row => { const min = row.querySelector('.level-min'); const max = row.querySelector('.level-max'); return {label:`${row.querySelector('select').value || 'Любой класс'} · ${min.value}–${max.value} ур.`, kind:'open'}; })
-  ];
-  while (slotNames.length < 9) slotNames.push({label:'Не распределено', kind:'empty'});
-  slotNames.forEach((entry, index) => {
-    const slot = document.createElement('span');
-    slot.className = `preview-slot-${entry.kind}`;
-    slot.textContent = `${String(index + 1).padStart(2, '0')} ${entry.label}`;
-    slots.appendChild(slot);
-  });
-  const note = document.createElement('small');
-  note.textContent = 'Объявление и вакансии сохранены в этом браузере. Для публикации на сайте потребуется серверная часть.';
-  preview.append(eyebrow, title, summary, schedule, slots, note);
-  preview.hidden = false;
-  document.dispatchEvent(new Event('partyfinder:preview'));
-  preview.scrollIntoView({behavior:'smooth', block:'start'});
+  renderOwnedListingState(ownedListing);
+  document.querySelector('#createdPreview').scrollIntoView({behavior:'smooth', block:'start'});
 });
 
 const days = ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
@@ -719,45 +805,76 @@ function updateFindCharacter() {
 findCharacterSelect.addEventListener('change', updateFindCharacter);
 syncAccessFields();
 
-const partyFixtures = [
-  {name:'Night Watch', tag:'Ищут игрока 7 / 9', leader:'Kain', hours:[19,20,21], open:['TH','Glad'], roles:[['SK','Танк'],['PP','Бафф'],['BP','Хил'],['Glad','Дамаг'],['TH','Даггер'],['OL','Бафф'],['WL','Контроль']]},
-  {name:'Aden Legacy', tag:'Ищут игроков 7 / 9', leader:'Mirael', hours:[18,19,20,21], open:['DA','Pala'], roles:[['Pala','Открыто'],['BP','Хил'],['PP','Бафф'],['WL','Контроль'],['Glad','Дамаг'],['OL','Бафф'],['DA','Открыто'],['TH','Даггер']]},
-  {name:'Vanguard', tag:'Ищут игрока 6 / 9', leader:'Shinjik', hours:[20,21,22], open:['WL','TH'], roles:[['SK','Танк'],['PP','Бафф'],['BP','Хил'],['Glad','Дамаг'],['OL','Бафф'],['DA','Танк']]},
-  {name:'Silver Dawn', tag:'Ищут игроков 6 / 9', leader:'Elyria', hours:[18,19,20], open:['SK','TK','BP','EE','SE'], roles:[['Pala','Танк'],['SK','Открыто'],['TK','Открыто'],['BP','Открыто'],['EE','Открыто'],['SE','Открыто'],['PP','Бафф'],['Glad','Дамаг']]},
-  {name:'Crimson Relay', tag:'Ищут игроков 7 / 9', leader:'Ragnar', hours:[19,20,21,22], open:['PP','WC','OL'], roles:[['DA','Танк'],['BP','Хил'],['PP','Открыто'],['WC','Открыто'],['OL','Открыто'],['Glad','Дамаг'],['TH','Даггер'],['WL','Контроль']]},
-  {name:'Moonlit Oath', tag:'Ищут игроков 8 / 9', leader:'Lunara', hours:[18,19,20], open:['SWS','BD'], roles:[['SK','Танк'],['BP','Хил'],['PP','Бафф'],['SWS','Открыто'],['BD','Открыто'],['Glad','Дамаг'],['TH','Даггер'],['OL','Бафф']]},
-  {name:'Dragon Valley', tag:'Ищут игрока 8 / 9', leader:'Ardent', hours:[20,21,22], open:['PW','AW'], roles:[['Pala','Танк'],['BP','Хил'],['PP','Бафф'],['PW','Открыто'],['AW','Открыто'],['Glad','Дамаг'],['OL','Бафф'],['TH','Даггер']]},
-  {name:"Archer's Rest", tag:'Ищут игроков 7 / 9', leader:'Hawke', hours:[18,19,20,21], open:['HE','SR','PR'], roles:[['TK','Танк'],['BP','Хил'],['PP','Бафф'],['HE','Открыто'],['SR','Открыто'],['PR','Открыто'],['OL','Бафф'],['SWS','Песни']]},
-  {name:'Iron Fist', tag:'Ищут игроков 6 / 9', leader:'Dester', hours:[19,20,21], open:['Destro','Tyr','BH'], roles:[['DA','Танк'],['BP','Хил'],['PP','Бафф'],['Destro','Открыто'],['Tyr','Открыто'],['BH','Открыто'],['OL','Бафф'],['Glad','Дамаг']]},
-  {name:'Forge Union', tag:'Ищут крафтера 8 / 9', leader:'Masterwork', hours:[18,19,20], open:['Craft'], roles:[['SK','Танк'],['BP','Хил'],['PP','Бафф'],['Craft','Открыто'],['Glad','Дамаг'],['TH','Даггер'],['OL','Бафф'],['WC','Бафф']]},
-  {name:'Arcane Circle', tag:'Ищут игроков 6 / 9', leader:'Aether', hours:[20,21,22], open:['Sorc','SPS','SH','Necro'], roles:[['Pala','Танк'],['BP','Хил'],['PP','Бафф'],['Sorc','Открыто'],['SPS','Открыто'],['SH','Открыто'],['Necro','Открыто'],['OL','Бафф']]},
-  {name:'Beast Pact', tag:'Ищут игроков 6 / 9', leader:'Katarina', hours:[19,20,21], open:['Cat','ES','PS'], roles:[['SK','Танк'],['BP','Хил'],['PP','Бафф'],['Cat','Открыто'],['ES','Открыто'],['PS','Открыто'],['OL','Бафф'],['BD','Танцы']]},
-  {name:'Dawn Patrol', tag:'Ищут игроков 5 / 9', leader:'Aurelia', hours:[17,18,19], open:['Pala','DA','TK'], roles:[['Pala','Открыто'],['DA','Открыто'],['TK','Открыто'],['BP','Хил'],['PP','Бафф'],['Glad','Дамаг'],['OL','Бафф'],['TH','Даггер']]},
-  {name:'Hellbound Runners', tag:'Ищут игроков 6 / 9', leader:'Rexxar', hours:[20,21,22], open:['Glad','WL','Destro','Tyr'], roles:[['SK','Танк'],['BP','Хил'],['PP','Бафф'],['Glad','Открыто'],['WL','Открыто'],['Destro','Открыто'],['Tyr','Открыто'],['OL','Бафф']]},
-  {name:'Elven Harmony', tag:'Ищут игроков 5 / 9', leader:'Elyndra', hours:[18,19,20], open:['TK','SK','EE','SE','SWS','BD'], roles:[['TK','Открыто'],['SK','Открыто'],['EE','Открыто'],['SE','Открыто'],['SWS','Открыто'],['BD','Открыто'],['BP','Хил'],['PP','Бафф']]},
-  {name:'Clan Council', tag:'Ищут игроков 5 / 9', leader:'Overwatch', hours:[19,20,21,22], open:['BP','PP','WC','OL'], roles:[['Pala','Танк'],['BP','Открыто'],['PP','Открыто'],['WC','Открыто'],['OL','Открыто'],['Glad','Дамаг'],['TH','Даггер'],['BD','Танцы']]},
-  {name:'Arrowhead', tag:'Ищут игроков 6 / 9', leader:'Hawkeye', hours:[18,19,20], open:['HE','SR','PR'], roles:[['SK','Танк'],['BP','Хил'],['PP','Бафф'],['HE','Открыто'],['SR','Открыто'],['PR','Открыто'],['OL','Бафф'],['SWS','Песни']]},
-  {name:'Dagger Syndicate', tag:'Ищут игроков 6 / 9', leader:'Shadowstep', hours:[20,21,22], open:['TH','PW','AW'], roles:[['DA','Танк'],['BP','Хил'],['PP','Бафф'],['TH','Открыто'],['PW','Открыто'],['AW','Открыто'],['OL','Бафф'],['WC','Бафф']]},
-  {name:'Berserker Line', tag:'Ищут игроков 5 / 9', leader:'Ironhide', hours:[17,18,19,20], open:['Destro','Tyr','BH','Craft'], roles:[['Pala','Танк'],['BP','Хил'],['PP','Бафф'],['Destro','Открыто'],['Tyr','Открыто'],['BH','Открыто'],['Craft','Открыто'],['OL','Бафф']]},
-  {name:'Magic Lantern', tag:'Ищут игроков 5 / 9', leader:'Mirage', hours:[19,20,21], open:['Sorc','SPS','SH','Necro'], roles:[['TK','Танк'],['BP','Хил'],['PP','Бафф'],['Sorc','Открыто'],['SPS','Открыто'],['SH','Открыто'],['Necro','Открыто'],['OL','Бафф']]},
-  {name:'Summon Circle', tag:'Ищут игроков 6 / 9', leader:'Mewtwo', hours:[18,19,20,21], open:['Cat','ES','PS'], roles:[['SK','Танк'],['BP','Хил'],['SE','Бафф'],['Cat','Открыто'],['ES','Открыто'],['PS','Открыто'],['OL','Бафф'],['BD','Танцы']]},
-];
-// Independent demo listings per server; replace with server-filtered API results later.
-const parties = servers.flatMap(server => partyFixtures.map((party, index) => ({...party, authStatus:index % 5 === 1 ? 'guest' : 'profile', timeZone:party.timeZone || demoScheduleTimeZone, serverId:server.id})));
-function userTimes(){ return new Set(availability.flatMap((set, day) => [...set].map(hour => `${day}:${hour}`))); }
+let parties = [];
+function partyFromApi(listing) {
+  const acceptedByIndex = new Map((listing.acceptedMembers || []).map(member => [member.vacancyIndex, member]));
+  const occupied = [
+    {slotNumber:1, className:listing.leaderClass, name:listing.leaderName},
+    ...listing.members
+  ].map(member => ({slotNumber:member.slotNumber, code:classCodeByName.get(member.className) || '—', label:member.name, open:false}));
+  const openings = listing.vacancies.map((vacancy, index) => {
+    const accepted = acceptedByIndex.get(index);
+    return accepted
+      ? {slotNumber:vacancy.slotNumber, code:classCodeByName.get(accepted.className) || '—', label:accepted.name, open:false}
+      : {slotNumber:vacancy.slotNumber, code:classCodeByName.get(vacancy.className) || '—', label:`${vacancy.minLevel}–${vacancy.maxLevel} ур.`, open:true};
+  });
+  return {
+    ...listing,
+    leader:listing.leaderName,
+    tag:`Ищут игроков ${occupied.length + acceptedByIndex.size} / 9`,
+    open:openings.filter(item => item.open).map(item => item.code),
+    roles:[...occupied, ...openings].sort((a,b) => a.slotNumber - b.slotNumber)
+  };
+}
+function escapePartyText(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
+}
+function userTimes(){ return new Set(availability.flatMap((set, day) => [...set].flatMap(hour => Array.from({length:60}, (_, minute) => `${day}:${hour * 60 + minute}`)))); }
 function overlapHours(party){ const user = userTimes(); return [...partyLocalSlots(party)].filter(slot => user.has(slot)); }
 function matchPercent(party){ const availableHours = Math.max(userTimes().size, 1); return Math.min(100, Math.round(overlapHours(party).length / availableHours * 100)); }
-function renderResults(){
+async function renderResults({scroll = true, silent = false} = {}){
   const code = selectedCode;
-  const user = userTimes();
-  const matches = parties.filter(party => party.serverId === selectedServerId && party.open.includes(code) && [...partyLocalSlots(party)].every(slot => user.has(slot)));
   const container = document.querySelector('#partyResults');
   const serverName = servers.find(server => server.id === selectedServerId)?.name || '';
-  document.querySelector('#resultSummary').textContent = matches.length ? `Найдено ${matches.length} ${matches.length === 1 ? 'подходящее пати' : 'подходящих пати'} · ${serverName} · ${selectedClass}` : `На ${serverName} для класса «${selectedClass || 'не выбран'}» пока нет полного совпадения`;
-  container.innerHTML = matches.length ? matches.map(party => { let claimed = false; const roles = [...party.roles, ['—','Ожидают']].slice(0,9); const slots = roles.map(([role,label]) => { const mine = !claimed && role === code; const open = mine || label === 'Открыто'; if (mine) claimed = true; return [role, mine ? 'твоё место' : label, open, mine]; }); const scheduleSlots = partyLocalSlots(party); const scheduleHours = scheduleSlots.size; return `<article class="party-card"><span class="match-score">${matchPercent(party)}% MATCH</span><h3>${party.name}</h3><p class="party-sub">${party.tag} · лидер ${party.leader} <span class="identity-badge identity-badge-${party.authStatus}" title="${party.authStatus === 'guest' ? 'Данные лидера введены вручную' : 'Лидер использует профиль (демо-данные)'}">${party.authStatus === 'guest' ? 'ГОСТЬ' : 'АВТОРИЗОВАН'}</span></p><div class="slots">${slots.map(([role,label,open,mine]) => `<div class="slot ${open ? 'open' : ''} ${mine ? 'your-place' : ''}">${role}<small>${label}</small></div>`).join('')}</div><div class="party-bottom"><span>◷ ${describeWeeklySlots(scheduleSlots).join(' · ')} · ${scheduleHours} ч/нед. · ${timeZoneDisplayLabel(userTimeZone)}</span><button class="join-btn" data-party="${party.name}" type="button">ОСТАВИТЬ ЗАЯВКУ →</button></div></article>`; }).join('') : `<div class="empty-state"><span>✦</span><h3>Нужно чуть больше времени</h3><p>Попробуй отметить ещё несколько часов или выбрать другой класс — так мы найдём больше живых групп.</p></div>`;
-  document.querySelector('#results').hidden = false; document.querySelector('#results').scrollIntoView({behavior:'smooth', block:'start'});
+  const character = selectedFindCharacter();
+  if (!silent) container.innerHTML = '<div class="empty-state" role="status"><p>Ищем подходящие пати…</p></div>';
+  document.querySelector('#results').hidden = false;
+  try {
+    const result = await partyApi('/parties/search', {method:'POST', body:{
+      serverId:selectedServerId, className:character.className, level:character.level,
+      availability:availability.map(set => [...set]), timeZone:userTimeZone
+    }});
+    parties = result.parties.map(partyFromApi);
+  } catch (error) {
+    if (!silent) container.innerHTML = `<div class="empty-state" role="alert"><h3>Не удалось выполнить поиск</h3><p>${escapePartyText(error.message)}</p></div>`;
+    return;
+  }
+  const matches = parties;
+  const resultSummary = document.querySelector('#resultSummary');
+  const resultCount = document.createElement('strong');
+  resultCount.textContent = matches.length
+    ? `Найдено ${matches.length} ${matches.length === 1 ? 'подходящее пати' : 'подходящих пати'}`
+    : 'Подходящих пати пока нет';
+  const resultContext = document.createElement('span');
+  resultContext.textContent = `${serverName} · ${selectedClass || 'класс не выбран'}`;
+  resultSummary.replaceChildren(resultCount, resultContext);
+  container.innerHTML = matches.length ? matches.map(party => {
+    let claimed = false;
+    const roles = [...party.roles];
+    while (roles.length < 9) roles.push({code:'—',label:'Ожидают',open:false});
+    const slots = roles.map(entry => {
+      const mine = !claimed && entry.open && (entry.code === code || entry.code === '—');
+      if (mine) claimed = true;
+      return {...entry, label:mine ? 'твоё место' : entry.label, mine};
+    });
+    const scheduleSlots = partyLocalSlots(party);
+    const badge = party.authStatus === 'profile' ? 'АВТОРИЗОВАН' : party.authStatus === 'guest' ? 'ГОСТЬ' : 'ДЕМО';
+    return `<article class="party-card"><span class="match-score">${matchPercent(party)}% MATCH</span><h3>${escapePartyText(party.name)}</h3><p class="party-sub">${escapePartyText(party.tag)} · лидер ${escapePartyText(party.leader)} <span class="identity-badge identity-badge-${party.authStatus === 'profile' ? 'profile' : 'guest'}">${badge}</span></p><div class="slots">${slots.map(slot => `<div class="slot ${slot.open ? 'open' : ''} ${slot.mine ? 'your-place' : ''}">${escapePartyText(classDisplayCode(slot.code))}<small>${escapePartyText(slot.label)}</small></div>`).join('')}</div><div class="party-bottom"><span>◷ ${escapePartyText(describeWeeklySlots(scheduleSlots).join(' · '))} · ${Number((scheduleSlots.size / 60).toFixed(2))} ч/нед. · ${escapePartyText(timeZoneDisplayLabel(userTimeZone))}</span><button class="join-btn" data-party="${escapePartyText(party.id)}" type="button">ОСТАВИТЬ ЗАЯВКУ →</button></div></article>`;
+  }).join('') : `<div class="empty-state"><h3>Пока нет подходящих пати</h3><p>Попробуй отметить ещё несколько часов или выбрать другой класс.</p></div>`;
+  document.querySelector('#results').hidden = false;
+  if (scroll) document.querySelector('#results').scrollIntoView({behavior:'smooth', block:'start'});
   container.querySelectorAll('.join-btn').forEach(button => button.addEventListener('click', () => {
-    document.dispatchEvent(new CustomEvent('partyfinder:apply', {detail:{partyName:button.dataset.party}}));
+    document.dispatchEvent(new CustomEvent('partyfinder:apply', {detail:{partyId:button.dataset.party}}));
   }));
   document.dispatchEvent(new Event('partyfinder:results-rendered'));
 }

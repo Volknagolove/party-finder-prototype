@@ -1,0 +1,126 @@
+[
+  {
+    "name": "Paladin",
+    "code": "Pala"
+  },
+  {
+    "name": "Dark Avenger",
+    "code": "DA"
+  },
+  {
+    "name": "Temple Knight",
+    "code": "TK"
+  },
+  {
+    "name": "Shillien Knight",
+    "code": "SK"
+  },
+  {
+    "name": "Bishop",
+    "code": "BP"
+  },
+  {
+    "name": "Elven Elder",
+    "code": "EE"
+  },
+  {
+    "name": "Shillien Elder",
+    "code": "SE"
+  },
+  {
+    "name": "Prophet",
+    "code": "PP"
+  },
+  {
+    "name": "Warcryer",
+    "code": "WC"
+  },
+  {
+    "name": "Overlord",
+    "code": "OL"
+  },
+  {
+    "name": "Swordsinger",
+    "code": "SWS"
+  },
+  {
+    "name": "Bladedancer",
+    "code": "BD"
+  },
+  {
+    "name": "Gladiator",
+    "code": "Glad"
+  },
+  {
+    "name": "Warlord",
+    "code": "WL"
+  },
+  {
+    "name": "Treasure Hunter",
+    "code": "TH"
+  },
+  {
+    "name": "Plains Walker",
+    "code": "PW"
+  },
+  {
+    "name": "Abyss Walker",
+    "code": "AW"
+  },
+  {
+    "name": "Hawkeye",
+    "code": "HE"
+  },
+  {
+    "name": "Silver Ranger",
+    "code": "SR"
+  },
+  {
+    "name": "Phantom Ranger",
+    "code": "PR"
+  },
+  {
+    "name": "Destroyer",
+    "code": "Destro"
+  },
+  {
+    "name": "Tyrant",
+    "code": "Tyr"
+  },
+  {
+    "name": "Bounty Hunter",
+    "code": "BH"
+  },
+  {
+    "name": "Warsmith",
+    "code": "Craft"
+  },
+  {
+    "name": "Sorcerer",
+    "code": "Sorc"
+  },
+  {
+    "name": "Spellsinger",
+    "code": "SPS"
+  },
+  {
+    "name": "Spellhowler",
+    "code": "SH"
+  },
+  {
+    "name": "Necromancer",
+    "code": "Necro"
+  },
+  {
+    "name": "Warlock",
+    "code": "Cat"
+  },
+  {
+    "name": "Elemental Summoner",
+    "code": "ES"
+  },
+  {
+    "name": "Phantom Summoner",
+    "code": "PS"
+  }
+]

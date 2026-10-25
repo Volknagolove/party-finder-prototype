@@ -13,8 +13,8 @@
   const source = new DOMParser().parseFromString(xhr.responseText, 'text/html');
   const originalHeader = source.querySelector('header.header');
   const originalFooter = source.querySelector('footer.footer');
-  const currentHeader = document.querySelector('header');
-  const currentFooter = document.querySelector('footer');
+  const currentHeader = document.querySelector('header.header');
+  const currentFooter = document.querySelector('footer.footer');
   if (!originalHeader || !originalFooter || !currentHeader || !currentFooter) return;
 
 
